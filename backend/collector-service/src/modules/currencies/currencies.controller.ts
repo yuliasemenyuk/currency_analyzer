@@ -1,10 +1,13 @@
 import { Controller, Get, Param } from '@nestjs/common';
+import { CurrenciesService } from './currencies.service';
+import { Currency } from './currencies.schema';
 
 @Controller('currencies')
 export class CurrenciesController {
+  constructor(private currenciesService: CurrenciesService) {}
   @Get()
-  fingAll() {
-    return 'This action returns all currencies';
+  async getAllCurrencies(): Promise<Currency[]> {
+    return this.currenciesService.findAll();
   }
 
   @Get(':id')
@@ -17,7 +20,7 @@ export class CurrenciesController {
   //   return [];
   // }
 
-  // export class CreateCatDto {
+  // export class CreateCatDto endpoints should i{
   //     name: string;
   //     age: number;
   //     breed: string;
