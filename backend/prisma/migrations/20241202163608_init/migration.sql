@@ -1,12 +1,18 @@
--- AlterTable
-ALTER TABLE "Currency" ALTER COLUMN "code" SET DATA TYPE TEXT;
+-- CreateTable
+CREATE TABLE "Currency" (
+    "id" TEXT NOT NULL,
+    "code" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+
+    CONSTRAINT "Currency_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "CurrencyPair" (
     "id" TEXT NOT NULL,
     "fromCode" TEXT NOT NULL,
     "toCode" TEXT NOT NULL,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "isEnabled" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "CurrencyPair_pkey" PRIMARY KEY ("id")
 );
@@ -38,6 +44,9 @@ CREATE TABLE "UsersOnRules" (
 
     CONSTRAINT "UsersOnRules_pkey" PRIMARY KEY ("userId","ruleId")
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Currency_code_key" ON "Currency"("code");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "CurrencyPair_fromCode_toCode_key" ON "CurrencyPair"("fromCode", "toCode");

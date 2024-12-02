@@ -1,8 +1,8 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+enum TrendDirection {
+  increase
+  decrease
+  no_change
+}
 
 generator client {
   provider = "prisma-client-js"
@@ -22,25 +22,25 @@ model Currency {
 }
 
 model CurrencyPair {
-  id          String   @id @default(uuid())
+  id           String   @id @default(uuid())
   fromCurrency Currency @relation("FromCurrency", fields: [fromCode], references: [code])
   toCurrency   Currency @relation("ToCurrency", fields: [toCode], references: [code])
   fromCode     String
   toCode       String
-  isActive     Boolean  @default(true)
   rules        Rule[]
   @@unique([fromCode, toCode])
 }
 
 model Rule {
- id          String       @id @default(uuid())
- currencyPair CurrencyPair @relation(fields: [pairId], references: [id])
- pairId      String
- percentage  Float
- isIncrease  Boolean
- users       UsersOnRules[]
- createdAt   DateTime     @default(now())
- updatedAt   DateTime     @updatedAt
+  id           String       @id @default(uuid())
+  currencyPair CurrencyPair @relation(fields: [pairId], references: [id])
+  pairId       String
+  percentage   Float
+  trendDirection TrendDirection
+  users        UsersOnRules[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  isEnabled    Boolean      @default(false)
 }
 
 model User {

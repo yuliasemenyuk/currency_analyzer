@@ -25,12 +25,9 @@ export class CurrenciesService implements OnModuleInit {
     const currencies = FrankfurterCurrenciesSchema.parse(data);
     const currencyCodes = Object.keys(currencies);
 
+    // Handle currencies
     await this.prisma.currency.deleteMany({
-      where: {
-        code: {
-          notIn: currencyCodes,
-        },
-      },
+      where: { code: { notIn: currencyCodes } },
     });
 
     for (const [code, name] of Object.entries(currencies)) {
@@ -39,6 +36,53 @@ export class CurrenciesService implements OnModuleInit {
         update: { name },
         create: { code, name },
       });
+    }
+
+    const existingPairs = await this.prisma.currencyPair.findMany();
+
+    if (existingPairs.length === 0) {
+      for (const fromCode of currencyCodes) {
+        for (const toCode of currencyCodes) {
+          if (fromCode !== toCode) {
+            await this.prisma.currencyPair.create({
+              data: {
+                fromCode,
+                toCode,
+                // isEnabled: true,
+              },
+            });
+          }
+        }
+      }
+    } else {
+      await this.updatePairs(currencyCodes);
+    }
+  }
+
+  private async updatePairs(currencyCodes: string[]) {
+    await this.prisma.currencyPair.deleteMany({
+      where: {
+        OR: [
+          { fromCode: { notIn: currencyCodes } },
+          { toCode: { notIn: currencyCodes } },
+        ],
+      },
+    });
+
+    for (const fromCode of currencyCodes) {
+      for (const toCode of currencyCodes) {
+        if (fromCode !== toCode) {
+          await this.prisma.currencyPair.upsert({
+            where: { fromCode_toCode: { fromCode, toCode } },
+            update: {},
+            create: {
+              fromCode,
+              toCode,
+              // isEnabled: false,
+            },
+          });
+        }
+      }
     }
   }
 
