@@ -14,7 +14,46 @@ datasource db {
 }
 
 model Currency {
-  id   String @id @default(uuid())
-  code String @unique @db.Char(3)
-  name String
+  id       String     @id @default(uuid())
+  code     String     @unique
+  name     String
+  fromPairs CurrencyPair[] @relation("FromCurrency")
+  toPairs   CurrencyPair[] @relation("ToCurrency")
+}
+
+model CurrencyPair {
+  id          String   @id @default(uuid())
+  fromCurrency Currency @relation("FromCurrency", fields: [fromCode], references: [code])
+  toCurrency   Currency @relation("ToCurrency", fields: [toCode], references: [code])
+  fromCode     String
+  toCode       String
+  isActive     Boolean  @default(true)
+  rules        Rule[]
+  @@unique([fromCode, toCode])
+}
+
+model Rule {
+ id          String       @id @default(uuid())
+ currencyPair CurrencyPair @relation(fields: [pairId], references: [id])
+ pairId      String
+ percentage  Float
+ isIncrease  Boolean
+ users       UsersOnRules[]
+ createdAt   DateTime     @default(now())
+ updatedAt   DateTime     @updatedAt
+}
+
+model User {
+ id          String       @id @default(uuid())
+ email       String       @unique 
+ rules       UsersOnRules[]
+}
+
+model UsersOnRules {
+ user        User     @relation(fields: [userId], references: [id])
+ userId      String
+ rule        Rule     @relation(fields: [ruleId], references: [id])
+ ruleId      String
+ 
+ @@id([userId, ruleId])
 }

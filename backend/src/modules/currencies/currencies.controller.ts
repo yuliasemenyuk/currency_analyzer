@@ -12,6 +12,7 @@ import { z } from 'zod';
 @Controller('currencies')
 export class CurrenciesController {
   constructor(private currenciesService: CurrenciesService) {}
+
   @Get()
   async getAllCurrencies(): Promise<Currency[]> {
     return this.currenciesService.findAll();

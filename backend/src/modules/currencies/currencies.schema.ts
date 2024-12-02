@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 export const CurrencySchema = z.object({
-  id: z.number(),
-  code: z.string().min(3).max(3),
-  symbol: z.string(),
+  id: z.string().uuid(),
+  code: z.string().length(3),
+  name: z.string().min(1),
 });
 
 // export const ExchangeRateResponseSchema = z.object({
@@ -26,6 +26,8 @@ export const FrankfurterResponseSchema = z.object({
   rates: z.record(z.number()),
 });
 
+export const FrankfurterCurrenciesSchema = z.record(z.string());
+
 export const ExchangeRateSchema = z.object({
   fromCurrency: z.string(),
   toCurrency: z.string(),
@@ -42,5 +44,6 @@ export const RateQuerySchema = z.object({
 
 export type Currency = z.infer<typeof CurrencySchema>;
 export type FrankfurterResponse = z.infer<typeof FrankfurterResponseSchema>;
+export type FrankfurterCurrencies = z.infer<typeof FrankfurterCurrenciesSchema>;
 // export type ExchangeRateResponse = z.infer<typeof ExchangeRateResponseSchema>;
 export type ExchangeRate = z.infer<typeof ExchangeRateSchema>;
