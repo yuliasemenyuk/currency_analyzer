@@ -1,16 +1,22 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Patch, Param, Query } from '@nestjs/common';
 import { RulesService } from './rules.service';
-import { AddRuleDto } from './rules.schema';
+import { AddRuleWithCurrencyIdsDto } from './rules.schema';
 
 @Controller('rules')
 export class RulesController {
   constructor(private readonly rulesService: RulesService) {}
 
   @Post()
-  async addRule(@Body() body: AddRuleDto) {
-    const { userId, ...ruleData } = body;
-    const newRule = await this.rulesService.createRule(ruleData);
-    await this.rulesService.subscribeUserToRule(userId, newRule.id);
-    return newRule;
+  async addRule(@Body() body: AddRuleWithCurrencyIdsDto) {
+    return this.rulesService.handleUserRuleSubscription(body);
+  }
+
+  @Patch(':ruleId/unsubscribe')
+  async unsubscribeUser(
+    @Param('ruleId') ruleId: string,
+    @Query('userId') userId: string,
+  ) {
+    await this.rulesService.subscribeUserToRule(userId, ruleId, false);
+    return { message: 'Unsubscribed successfully' };
   }
 }

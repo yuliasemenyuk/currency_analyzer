@@ -1,7 +1,6 @@
 enum TrendDirection {
   increase
   decrease
-  no_change
 }
 
 generator client {
@@ -50,10 +49,10 @@ model User {
 }
 
 model UsersOnRules {
- user        User     @relation(fields: [userId], references: [id])
- userId      String
- rule        Rule     @relation(fields: [ruleId], references: [id])
- ruleId      String
- 
- @@id([userId, ruleId])
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+  rule   Rule   @relation(fields: [ruleId], references: [id])
+  ruleId String
+  isEnabled Boolean @default(false)
+  @@id([userId, ruleId])
 }

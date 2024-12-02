@@ -1,27 +1,124 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
-import { AddRuleDto } from './rules.schema';
+import { AddRuleWithCurrencyIdsDto } from './rules.schema';
 
 @Injectable()
 export class RulesService {
   constructor(private prisma: PrismaService) {}
 
-  async createRule(data: AddRuleDto) {
-    return this.prisma.rule.create({
-      data: {
-        currencyPair: { connect: { id: data.pairId } },
-        percentage: data.percentage,
-        trendDirection: data.trendDirection,
+  async findRuleByCurrencies(data: AddRuleWithCurrencyIdsDto) {
+    const { fromCurrencyCode, toCurrencyCode, percentage, trendDirection } =
+      data;
+
+    const pair = await this.prisma.currencyPair.findUnique({
+      where: {
+        fromCode_toCode: {
+          fromCode: fromCurrencyCode,
+          toCode: toCurrencyCode,
+        },
+      },
+    });
+
+    if (!pair) {
+      throw new BadRequestException('Currency pair does not exist.');
+    }
+
+    return this.prisma.rule.findFirst({
+      where: {
+        currencyPair: {
+          id: pair.id,
+        },
+        percentage,
+        trendDirection,
         isEnabled: true,
       },
     });
   }
 
-  async subscribeUserToRule(userId: string, ruleId: string) {
-    return this.prisma.usersOnRules.create({
+  async createRule(data: AddRuleWithCurrencyIdsDto) {
+    console.log('createRule');
+    const { fromCurrencyCode, toCurrencyCode, percentage, trendDirection } =
+      data;
+
+    const pair = await this.prisma.currencyPair.findUnique({
+      where: {
+        fromCode_toCode: {
+          fromCode: fromCurrencyCode,
+          toCode: toCurrencyCode,
+        },
+      },
+    });
+
+    if (!pair) {
+      throw new BadRequestException('Currency pair does not exist.');
+    }
+
+    return this.prisma.rule.create({
       data: {
+        currencyPair: { connect: { id: pair.id } },
+        percentage,
+        trendDirection,
+        isEnabled: true,
+      },
+    });
+  }
+
+  async handleUserRuleSubscription(data: AddRuleWithCurrencyIdsDto) {
+    console.log('handleUserRuleSubscription');
+    const {
+      userId,
+      fromCurrencyCode,
+      toCurrencyCode,
+      percentage,
+      trendDirection,
+    } = data;
+
+    if (fromCurrencyCode === toCurrencyCode) {
+      throw new BadRequestException('Cannot subscribe to the same currency.');
+    }
+
+    const existingRule = await this.findRuleByCurrencies({
+      fromCurrencyCode,
+      toCurrencyCode,
+      percentage,
+      trendDirection,
+    });
+
+    console.log('existingRule', existingRule);
+
+    let newRule;
+    if (existingRule) {
+      await this.subscribeUserToRule(userId, existingRule.id, true);
+      newRule = existingRule;
+    } else {
+      newRule = await this.createRule({
+        fromCurrencyCode,
+        toCurrencyCode,
+        percentage,
+        trendDirection,
+      });
+      await this.subscribeUserToRule(userId, newRule.id, true);
+    }
+
+    return newRule;
+  }
+
+  async subscribeUserToRule(
+    userId: string,
+    ruleId: string,
+    isEnabled: boolean,
+  ) {
+    return this.prisma.usersOnRules.upsert({
+      where: {
+        userId_ruleId: { userId, ruleId },
+      },
+      update: {
+        isEnabled,
+      },
+      create: {
         user: { connect: { id: userId } },
         rule: { connect: { id: ruleId } },
+        isEnabled,
       },
     });
   }

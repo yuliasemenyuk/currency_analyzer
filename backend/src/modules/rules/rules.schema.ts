@@ -1,10 +1,21 @@
 import { z } from 'zod';
 
-export const AddRuleSchema = z.object({
-  pairId: z.string(),
+export const AddRuleWithCurrencyIdsSchema = z.object({
+  fromCurrencyCode: z.string(),
+  toCurrencyCode: z.string(),
   percentage: z.number().positive(),
-  trendDirection: z.enum(['increase', 'decrease', 'no_change']),
+  trendDirection: z.enum(['increase', 'decrease']),
   userId: z.string(),
 });
 
-export type AddRuleDto = z.infer<typeof AddRuleSchema>;
+export const AddRuleWithPairIdSchema = z.object({
+  pairId: z.string(),
+  percentage: z.number().positive(),
+  trendDirection: z.enum(['increase', 'decrease']),
+  userId: z.string(),
+});
+
+export type AddRuleWithCurrencyIdsDto = z.infer<
+  typeof AddRuleWithCurrencyIdsSchema
+>;
+export type AddRuleWithPairIdDto = z.infer<typeof AddRuleWithPairIdSchema>;
