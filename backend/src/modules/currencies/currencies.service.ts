@@ -114,4 +114,13 @@ export class CurrenciesService implements OnModuleInit {
       ask: data.rates[to],
     };
   }
+
+  async getCurrencyRate(fromCurrencyCode: string, toCurrencyCode: string) {
+    const { data } = await firstValueFrom(
+      this.httpService.get(
+        `${apiUrl}/latest?from=${fromCurrencyCode}&to=${toCurrencyCode}`,
+      ),
+    );
+    return data.rates[toCurrencyCode];
+  }
 }

@@ -122,4 +122,11 @@ export class RulesService {
       },
     });
   }
+
+  async getActiveRules() {
+    return this.prisma.rule.findMany({
+      where: { isEnabled: true },
+      include: { users: { include: { user: true } }, currencyPair: true },
+    });
+  }
 }
