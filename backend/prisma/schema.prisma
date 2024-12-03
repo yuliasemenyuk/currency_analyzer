@@ -28,6 +28,15 @@ model CurrencyPair {
   toCode       String
   rules        Rule[]
   @@unique([fromCode, toCode])
+  CurrencyRateHistory CurrencyRateHistory[]
+}
+
+model CurrencyRateHistory {
+  id             String   @id @default(uuid())
+  currencyPair   CurrencyPair @relation(fields: [pairId], references: [id])
+  pairId         String
+  rate           Float
+  timestamp      DateTime @default(now())
 }
 
 model Rule {

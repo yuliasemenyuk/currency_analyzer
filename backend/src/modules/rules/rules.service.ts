@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
-import { AddRuleWithCurrencyIdsDto } from './rules.schema';
+import { ActiveRuleSchema, AddRuleWithCurrencyIdsDto } from './rules.schema';
 
 @Injectable()
 export class RulesService {
@@ -123,10 +123,16 @@ export class RulesService {
     });
   }
 
+  //TODO: Decide on validation type later
   async getActiveRules() {
-    return this.prisma.rule.findMany({
+    const activeRules = await this.prisma.rule.findMany({
       where: { isEnabled: true },
-      include: { users: { include: { user: true } }, currencyPair: true },
+      include: {
+        users: { include: { user: true } },
+        currencyPair: true,
+      },
     });
+    // return activeRules;
+    return activeRules.map((rule) => ActiveRuleSchema.parse(rule));
   }
 }
