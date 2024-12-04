@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const AddRuleWithCurrencyIdsSchema = z.object({
+export const AddRuleWithCurrencyCodesSchema = z.object({
   fromCurrencyCode: z.string(),
   toCurrencyCode: z.string(),
   percentage: z.number().positive(),
@@ -33,8 +33,8 @@ export const ActiveRuleSchema = z.object({
   ),
 });
 
-export type AddRuleWithCurrencyIdsDto = z.infer<
-  typeof AddRuleWithCurrencyIdsSchema
+export type AddRuleWithCurrencyCodesDto = z.infer<
+  typeof AddRuleWithCurrencyCodesSchema
 >;
 export type AddRuleWithPairIdDto = z.infer<typeof AddRuleWithPairIdSchema>;
 export type ActiveRuleDto = z.infer<typeof ActiveRuleSchema>;

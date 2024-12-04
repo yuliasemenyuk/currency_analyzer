@@ -1,12 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
-import { ActiveRuleSchema, AddRuleWithCurrencyIdsDto } from './rules.schema';
+import { ActiveRuleSchema, AddRuleWithCurrencyCodesDto } from './rules.schema';
 
 @Injectable()
 export class RulesService {
   constructor(private prisma: PrismaService) {}
 
-  async findRuleByCurrencies(data: AddRuleWithCurrencyIdsDto) {
+  async findRuleByCurrencies(data: AddRuleWithCurrencyCodesDto) {
     const { fromCurrencyCode, toCurrencyCode, percentage, trendDirection } =
       data;
 
@@ -35,7 +35,7 @@ export class RulesService {
     });
   }
 
-  async createRule(data: AddRuleWithCurrencyIdsDto) {
+  async createRule(data: AddRuleWithCurrencyCodesDto) {
     console.log('createRule');
     const { fromCurrencyCode, toCurrencyCode, percentage, trendDirection } =
       data;
@@ -63,7 +63,7 @@ export class RulesService {
     });
   }
 
-  async handleUserRuleSubscription(data: AddRuleWithCurrencyIdsDto) {
+  async handleUserRuleSubscription(data: AddRuleWithCurrencyCodesDto) {
     console.log('handleUserRuleSubscription');
     const {
       userId,

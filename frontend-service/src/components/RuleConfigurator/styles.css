@@ -1,0 +1,76 @@
+.currency-selector {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 32px;
+  background: #f8fafc;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.selects-container {
+  display: flex;
+  gap: 32px;
+}
+
+.currency-select {
+  width: 50%;
+  padding: 16px;
+  flex: 1;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 16px;
+  color: #334155;
+  background: white;
+  transition: all 0.2s;
+}
+
+.currency-select option {
+  padding: 12px;
+  font-size: 15px;
+}
+
+.currency-select:hover {
+  border-color: #94a3b8;
+}
+
+.currency-select:focus {
+  outline: none;
+  border-color: #64748b;
+  box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.1);
+}
+
+.trend-select {
+  width: 120px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+.percentage-input {
+  width: 120px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+.save-button {
+  margin-top: 24px;
+  padding: 16px 32px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.save-button:hover {
+  background: #1d4ed8;
+}
+
+.save-button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
