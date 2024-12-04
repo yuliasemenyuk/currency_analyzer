@@ -9,7 +9,9 @@ import { PrismaService } from 'prisma/prisma.service';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 
-const apiUrl = 'https://api.frankfurter.app';
+// const apiUrl = 'https://api.frankfurter.app';
+const apiUrl = 'https://openexchangerates.org/api';
+const API_KEY = process.env.OPEN_EXCHANGE_RATES_API_KEY;
 
 @Injectable()
 export class CurrenciesService implements OnModuleInit {
@@ -20,7 +22,7 @@ export class CurrenciesService implements OnModuleInit {
 
   async onModuleInit() {
     const { data } = await firstValueFrom(
-      this.httpService.get(`${apiUrl}/currencies`),
+      this.httpService.get(`${apiUrl}/currencies.json?app_id=${API_KEY}`),
     );
     const currencies = FrankfurterCurrenciesSchema.parse(data);
     const currencyCodes = Object.keys(currencies);
@@ -103,13 +105,15 @@ export class CurrenciesService implements OnModuleInit {
 
   async getRates(from: string, to: string): Promise<ExchangeRate> {
     const { data } = await firstValueFrom(
-      this.httpService.get(`${apiUrl}/latest?from=${from}&to=${to}`),
+      this.httpService.get(
+        `${apiUrl}/latest.json?app_id=${API_KEY}&base=${from}&symbols=${to}`,
+      ),
     );
     return {
-      fromCurrency: data.base,
+      fromCurrency: from,
       toCurrency: to,
       rate: data.rates[to],
-      lastUpdated: data.date,
+      lastUpdated: new Date(data.timestamp * 1000).toISOString(),
       bid: data.rates[to],
       ask: data.rates[to],
     };
@@ -118,7 +122,7 @@ export class CurrenciesService implements OnModuleInit {
   async getCurrencyRate(fromCurrencyCode: string, toCurrencyCode: string) {
     const { data } = await firstValueFrom(
       this.httpService.get(
-        `${apiUrl}/latest?from=${fromCurrencyCode}&to=${toCurrencyCode}`,
+        `${apiUrl}/latest.json?app_id=${API_KEY}&base=${fromCurrencyCode}&symbols=${toCurrencyCode}`,
       ),
     );
     return data.rates[toCurrencyCode];
