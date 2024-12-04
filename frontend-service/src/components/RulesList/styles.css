@@ -1,0 +1,48 @@
+.rules-list {
+  margin: 40px auto;
+  max-width: 800px;
+}
+
+.rule-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  margin-bottom: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.rule-info {
+  display: flex;
+  gap: 24px;
+}
+
+.rule-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.toggle-button,
+.edit-button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+}
+
+.toggle-button.enabled {
+  background: #ef4444;
+  color: white;
+}
+
+.toggle-button.disabled {
+  background: #22c55e;
+  color: white;
+}
+
+.edit-button {
+  background: #3b82f6;
+  color: white;
+}
