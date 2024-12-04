@@ -1,10 +1,23 @@
-import { Controller, Post, Body, Patch, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Query,
+  Get,
+} from '@nestjs/common';
 import { RulesService } from './rules.service';
 import { AddRuleWithCurrencyCodesDto } from './rules.schema';
 
 @Controller('rules')
 export class RulesController {
   constructor(private readonly rulesService: RulesService) {}
+
+  @Get()
+  async getUersRules() {
+    return this.rulesService.getAllUsersRules();
+  }
 
   @Post()
   async addRule(@Body() body: AddRuleWithCurrencyCodesDto) {

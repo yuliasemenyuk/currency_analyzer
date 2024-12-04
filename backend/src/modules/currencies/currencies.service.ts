@@ -8,6 +8,7 @@ import {
 import { PrismaService } from 'prisma/prisma.service';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import { CurrencyPair } from '@prisma/client';
 
 // const apiUrl = 'https://api.frankfurter.app';
 const apiUrl = 'https://openexchangerates.org/api';
@@ -93,15 +94,57 @@ export class CurrenciesService implements OnModuleInit {
     return currencies.map((c) => CurrencySchema.parse(c));
   }
 
-  // async listCurrencies() {
-  //   const { data } = await firstValueFrom(
-  //     this.httpService.get(`${apiUrl}/currencies`),
-  //   );
-  //   return Object.entries(data).map(([code, name]) => ({
-  //     code,
-  //     name: name as string,
-  //   }));
-  // }
+  async getMonitoredPairs(userId: string): Promise<CurrencyPair[]> {
+    return this.prisma.currencyPair.findMany({
+      where: {
+        users: {
+          some: {
+            userId,
+            isEnabled: true,
+          },
+        },
+      },
+      include: {
+        fromCurrency: true,
+        toCurrency: true,
+      },
+    });
+  }
+
+  async startMonitoringPair(data: {
+    userId: string;
+    fromCode: string;
+    toCode: string;
+  }) {
+    const { userId, fromCode, toCode } = data;
+    const pair = await this.prisma.currencyPair.findFirst({
+      where: {
+        fromCode,
+        toCode,
+      },
+    });
+
+    if (!pair) {
+      throw new Error('Pair not found');
+    }
+
+    await this.prisma.UsersOnPairs.upsert({
+      where: {
+        userId_pairId: {
+          userId,
+          pairId: pair.id,
+        },
+      },
+      update: {
+        isEnabled: true,
+      },
+      create: {
+        user: { connect: { id: userId } },
+        pair: { connect: { id: pair.id } },
+        isEnabled: true,
+      },
+    });
+  }
 
   async getRates(from: string, to: string): Promise<ExchangeRate> {
     const { data } = await firstValueFrom(

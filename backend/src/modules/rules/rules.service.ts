@@ -6,6 +6,10 @@ import { ActiveRuleSchema, AddRuleWithCurrencyCodesDto } from './rules.schema';
 export class RulesService {
   constructor(private prisma: PrismaService) {}
 
+  async getAllUsersRules() {
+    return [];
+  }
+
   async findRuleByCurrencies(data: AddRuleWithCurrencyCodesDto) {
     const { fromCurrencyCode, toCurrencyCode, percentage, trendDirection } =
       data;

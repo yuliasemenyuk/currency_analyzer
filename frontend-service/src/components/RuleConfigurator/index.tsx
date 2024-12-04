@@ -10,7 +10,7 @@ export function RuleConfigurator() {
   const [trendDirection, setTrendDirection] = useState<'increase' | 'decrease'>('increase');
 
   useEffect(() => {
-    getMonitoredPairs().then(({data}) => setMonitoredPairs(data));
+    getMonitoredPairs('120c1bcc-a42d-4672-80b9-1d607248ff36').then(({data}) => setMonitoredPairs(data));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

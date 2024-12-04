@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Currency } from "../../types";
-import { getCurrencies, createCurreciesPair } from "../../services/api";
+import { getCurrencies, startMonitoringPair } from "../../services/api";
 import './styles.css';
 
 export function CurrencyPairsConfigurator() {
@@ -15,7 +15,7 @@ export function CurrencyPairsConfigurator() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createCurreciesPair({ fromCode: from, toCode: to });
+      await startMonitoringPair({userId: '040dff52-8aa1-41a6-bc2f-d578170df96c', fromCode: from, toCode: to });
       setFrom("");
       setTo("");
     } catch (err) {

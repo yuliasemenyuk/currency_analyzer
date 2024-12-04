@@ -1,13 +1,16 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Get,
   Param,
+  Post,
   Query,
 } from '@nestjs/common';
 import { CurrenciesService } from './currencies.service';
 import { Currency, RateQuerySchema } from './currencies.schema';
 import { z } from 'zod';
+import { CurrencyPair } from '@prisma/client';
 
 @Controller('currencies')
 export class CurrenciesController {
@@ -16,6 +19,20 @@ export class CurrenciesController {
   @Get()
   async getAllCurrencies(): Promise<Currency[]> {
     return this.currenciesService.findAll();
+  }
+
+  @Get('monitored')
+  async getMonitoredCurrencies(
+    @Query('userId') userId: string,
+  ): Promise<CurrencyPair[]> {
+    return this.currenciesService.getMonitoredPairs(userId);
+  }
+
+  @Post('monitor')
+  async startMonitoringCurrencies(
+    @Body() body: { userId: string; fromCode: string; toCode: string },
+  ) {
+    return this.currenciesService.startMonitoringPair(body);
   }
 
   @Get('rates')

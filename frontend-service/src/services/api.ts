@@ -6,10 +6,11 @@ const api = axios.create({
    });
 
 export const getCurrencies = () => api.get<Currency[]>('/currencies');
-export const createCurreciesPair = (data: { fromCode: string; toCode: string; }) => api.post('/pair', data);
-export const getMonitoredPairs = () => api.get('/pair');
+// export const createCurreciesPair = (data: { fromCode: string; toCode: string; }) => api.post('/pair', data);
+export const getMonitoredPairs = (userId: string) => api.get(`currencies/monitored?userId=${userId}`);
+export const startMonitoringPair = (data: {userId: string, fromCode: string, toCode: string}) => api.post('/currencies/monitor', data);
 export const updateMonitoredPair = (id: string, data: { isEnabled: boolean; }) => api.put(`/pair/${id}`, data);
-export const deleteMonitoredPair = (id: string) => api.delete(`/pair/${id}`);
+export const deleteMonitoredPair = (id: string) => api.delete(`currencies/pair/${id}`);
 export const createRule = (data: AddRuleWithCurrencyCodesDto) => api.post('/rules', data);
 export const getRules = () => api.get('/rules');
 export const updateRule = (id: string, data: Partial<AddRuleWithCurrencyCodesDto>) => api.put(`/rules/${id}`, data);

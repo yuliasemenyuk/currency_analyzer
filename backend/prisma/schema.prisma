@@ -21,14 +21,15 @@ model Currency {
 }
 
 model CurrencyPair {
-  id           String   @id @default(uuid())
-  fromCurrency Currency @relation("FromCurrency", fields: [fromCode], references: [code])
-  toCurrency   Currency @relation("ToCurrency", fields: [toCode], references: [code])
-  fromCode     String
-  toCode       String
-  rules        Rule[]
-  @@unique([fromCode, toCode])
-  CurrencyRateHistory CurrencyRateHistory[]
+ id           String   @id @default(uuid())
+ fromCurrency Currency @relation("FromCurrency", fields: [fromCode], references: [code])
+ toCurrency   Currency @relation("ToCurrency", fields: [toCode], references: [code])
+ fromCode     String
+ toCode       String
+ rules        Rule[]
+ users        UsersOnPairs[]
+ CurrencyRateHistory CurrencyRateHistory[]
+ @@unique([fromCode, toCode])
 }
 
 model CurrencyRateHistory {
@@ -52,11 +53,21 @@ model Rule {
 }
 
 model User {
- id          String       @id @default(uuid())
- email       String       @unique 
+ id          String          @id @default(uuid())
+ email       String          @unique
+ pairs       UsersOnPairs[]
  rules       UsersOnRules[]
 }
 
+model UsersOnPairs {
+ user     User        @relation(fields: [userId], references: [id])
+ userId   String
+ pair     CurrencyPair @relation(fields: [pairId], references: [id])
+ pairId   String
+ isEnabled Boolean    @default(true)
+
+ @@id([userId, pairId])
+}
 model UsersOnRules {
   user   User   @relation(fields: [userId], references: [id])
   userId String

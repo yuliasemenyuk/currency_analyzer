@@ -7,7 +7,9 @@ export function MonitoredPairsList() {
   const [pairs, setPairs] = useState<CurrencyPair[]>([]);
 
   useEffect(() => {
-    getMonitoredPairs().then(({ data }) => setPairs(data));
+    getMonitoredPairs("120c1bcc-a42d-4672-80b9-1d607248ff36").then(({ data }) => {
+        console.log(data, 'data');
+        setPairs(data)});
   }, []);
 
   const handleToggleMonitoring = async (pairId: string, isEnabled: boolean) => {
