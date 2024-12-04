@@ -1,76 +1,64 @@
-.currency-selector {
-  max-width: 800px;
-  margin: 40px auto;
-  padding: 32px;
+.rule-configurator {
   background: #f8fafc;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: 24px;
+  max-width: 800px;
+  margin: 40px auto;
 }
 
-.selects-container {
-  display: flex;
-  gap: 32px;
-}
-
-.currency-select {
-  width: 50%;
-  padding: 16px;
-  flex: 1;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  font-size: 16px;
+h3 {
+  margin-bottom: 16px;
+  font-size: 18px;
   color: #334155;
-  background: white;
-  transition: all 0.2s;
 }
 
-.currency-select option {
+.rule-form {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.pair-select {
+  flex: 2;
   padding: 12px;
-  font-size: 15px;
-}
-
-.currency-select:hover {
-  border-color: #94a3b8;
-}
-
-.currency-select:focus {
-  outline: none;
-  border-color: #64748b;
-  box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.1);
-}
-
-.trend-select {
-  width: 120px;
-  padding: 16px;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
-  font-size: 16px;
+  font-size: 15px;
+  background: white;
 }
 
 .percentage-input {
-  width: 120px;
-  padding: 16px;
+  flex: 1;
+  padding: 12px;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
-  font-size: 16px;
+  font-size: 15px;
 }
 
-.save-button {
-  margin-top: 24px;
-  padding: 16px 32px;
-  background: #2563eb;
-  color: white;
+.trend-select {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 15px;
+  background: white;
+}
+
+.add-rule-button {
+  padding: 12px 24px;
   border: none;
   border-radius: 6px;
-  font-size: 16px;
+  font-size: 15px;
   cursor: pointer;
+  color: white;
+  background: #22c55e;
 }
 
-.save-button:hover {
-  background: #1d4ed8;
+.add-rule-button:hover {
+  background: #16a34a;
 }
 
-.save-button:disabled {
+.add-rule-button:disabled {
   background: #94a3b8;
   cursor: not-allowed;
 }

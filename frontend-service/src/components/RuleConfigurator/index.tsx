@@ -1,87 +1,54 @@
-import { useEffect, useState } from "react";
-import { Currency } from "../../types";
-import { createRule, getCurrencies } from "../../services/api";
-import "./styles.css";
+import { useState, useEffect } from 'react';
+import { CurrencyPair, Rule } from '../../types';
+import { getMonitoredPairs, createRule } from '../../services/api';
+import './styles.css';
 
 export function RuleConfigurator() {
-  const [from, setFrom] = useState<Currency["code"]>("");
-  const [to, setTo] = useState<Currency["code"]>("");
-  const [currencies, setCurrencies] = useState<Currency[]>([]);
-  const [percentage, setPercentage] = useState<string>("");
-  const [trendDirection, setTrendDirection] = useState<"increase" | "decrease">(
-    "increase"
-  );
+  const [monitoredPairs, setMonitoredPairs] = useState<CurrencyPair[]>([]);
+  const [selectedPairId, setSelectedPairId] = useState('');
+  const [percentage, setPercentage] = useState('');
+  const [trendDirection, setTrendDirection] = useState<'increase' | 'decrease'>('increase');
 
   useEffect(() => {
-    getCurrencies().then(({ data }) => setCurrencies(data));
+    getMonitoredPairs().then(({data}) => setMonitoredPairs(data));
   }, []);
-
-  const isDisabled = !from || !to || !percentage;
-
-  const handlePercentageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (Number(value) >= 0 && Number(value) <= 100) {
-      setPercentage(value);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log({ from, to, percentage: Number(percentage) });
     try {
       await createRule({
-        fromCurrencyCode: from,
-        toCurrencyCode: to,
         percentage: Number(percentage),
-        trendDirection: trendDirection,
-        userId: "120c1bcc-a42d-4672-80b9-1d607248ff36",
+        trendDirection,
+        fromCurrencyCode: monitoredPairs.find(pair => pair.id === selectedPairId)?.fromCode || '',
+        toCurrencyCode: monitoredPairs.find(pair => pair.id === selectedPairId)?.toCode || '',
+        userId: ''
       });
-      setFrom("");
-      setTo("");
-      setPercentage("");
+      setSelectedPairId('');
+      setPercentage('');
+      setTrendDirection('increase');
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
   };
 
   return (
-    <form className="currency-selector" onSubmit={handleSubmit}>
-      <div className="selects-container">
+    <form className="rule-configurator" onSubmit={handleSubmit}>
+      <h3>Set Notification Rule</h3>
+      <div className="rule-form">
         <select
-          className="currency-select"
-          value={from}
-          onChange={(e) => setFrom(e.target.value)}
+          className="pair-select"
+          value={selectedPairId}
+          onChange={e => setSelectedPairId(e.target.value)}
+          required
         >
-          <option value="">From</option>
-          {currencies.map(({ code, name }) => (
-            <option key={code} value={code}>
-              {code} - {name}
+          <option value="">Select monitored pair</option>
+          {monitoredPairs.map(pair => (
+            <option key={pair.id} value={pair.id}>
+              {pair.fromCode}/{pair.toCode}
             </option>
           ))}
         </select>
 
-        <select
-          className="currency-select"
-          value={to}
-          onChange={(e) => setTo(e.target.value)}
-        >
-          <option value="">To</option>
-          {currencies.map(({ code, name }) => (
-            <option key={code} value={code}>
-              {code} - {name}
-            </option>
-          ))}
-        </select>
-        <select
-          className="trend-select"
-          value={trendDirection}
-          onChange={(e) =>
-            setTrendDirection(e.target.value as "increase" | "decrease")
-          }
-        >
-          <option value="increase">Increase</option>
-          <option value="decrease">Decrease</option>
-        </select>
         <input
           type="number"
           className="percentage-input"
@@ -89,12 +56,32 @@ export function RuleConfigurator() {
           min="0"
           max="100"
           value={percentage}
-          onChange={handlePercentageChange}
+          onChange={e => {
+            const value = e.target.value;
+            if (Number(value) >= 0 && Number(value) <= 100) {
+              setPercentage(value);
+            }
+          }}
+          required
         />
+
+        <select
+          className="trend-select"
+          value={trendDirection}
+          onChange={e => setTrendDirection(e.target.value as 'increase' | 'decrease')}
+        >
+          <option value="increase">Increase</option>
+          <option value="decrease">Decrease</option>
+        </select>
+
+        <button 
+          type="submit"
+          className="add-rule-button"
+          disabled={!selectedPairId || !percentage}
+        >
+          Add Rule
+        </button>
       </div>
-      <button type="submit" className="save-button" disabled={isDisabled}>
-        Save Rule
-      </button>
     </form>
   );
 }
