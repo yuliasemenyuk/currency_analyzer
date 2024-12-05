@@ -14,4 +14,4 @@ export const deleteMonitoredPair = (id: string) => api.delete(`currencies/pair/$
 export const createRule = (data: AddRuleWithCurrencyCodesDto) => api.post('/rules', data);
 export const getRules = () => api.get('/rules');
 export const updateRule = (id: string, data: Partial<AddRuleWithCurrencyCodesDto>) => api.put(`/rules/${id}`, data);
-export const unsubscribeRule = (ruleId: string, p0: { isEnabled: boolean; }) => api.patch(`/rules/${ruleId}/unsubscribe?userId=120c1bcc-a42d-4672-80b9-1d607248ff36`);
+export const unsubscribeRule = (ruleId: string, p0: { isEnabled: boolean; }) => api.patch(`/rules/${ruleId}/unsubscribe?userId=040dff52-8aa1-41a6-bc2f-d578170df96c`);
