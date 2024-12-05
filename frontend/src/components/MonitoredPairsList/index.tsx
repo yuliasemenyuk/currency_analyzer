@@ -10,6 +10,7 @@ export function MonitoredPairsList({
   monitoredPairs,
   removeMonitoredPair,
 }: MonitoredPairsListProps) {
+  console.log(monitoredPairs, 'monitoredPairs');
   const handleDelete = async (pairId: string) => {
     await removeMonitoredPair(pairId);
   };

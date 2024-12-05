@@ -95,19 +95,30 @@ export class CurrenciesService implements OnModuleInit {
   }
 
   async getMonitoredPairs(userId: string): Promise<CurrencyPair[]> {
-    return this.prisma.currencyPair.findMany({
+    const pairs = await this.prisma.currencyPair.findMany({
       where: {
         users: {
           some: {
             userId,
-            isEnabled: true,
           },
         },
       },
       include: {
         fromCurrency: true,
         toCurrency: true,
+        users: {
+          where: { userId },
+          select: { userId: true, isEnabled: true },
+        },
       },
+    });
+
+    return pairs.map((pair) => {
+      const user = pair.users.find((user) => user.userId === userId);
+      return {
+        ...pair,
+        isEnabled: user?.isEnabled ?? false,
+      };
     });
   }
 

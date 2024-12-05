@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Currency, CurrencyPair } from "../../types";
 import './styles.css';
 
@@ -15,6 +15,10 @@ export function CurrencyPairsConfigurator({
 }: CurrencyPairsConfiguratorProps) {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+
+  const sortedCurrencies = useMemo(() => {
+    return currencies.sort((a, b) => a.code.localeCompare(b.code));
+  }, [currencies]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +43,7 @@ export function CurrencyPairsConfigurator({
           required
         >
           <option value="">Select base currency</option>
-          {currencies.map(c => (
+          {sortedCurrencies.map(c => (
             <option key={c.code} value={c.code}>{c.code}</option>
           ))}
         </select>
@@ -50,7 +54,7 @@ export function CurrencyPairsConfigurator({
           required
         >
           <option value="">Select target currency</option>
-          {currencies.map(c => (
+          {sortedCurrencies.map(c => (
             <option key={c.code} value={c.code}>{c.code}</option>
           ))}
         </select>
