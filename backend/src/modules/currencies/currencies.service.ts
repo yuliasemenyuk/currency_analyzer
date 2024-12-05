@@ -157,6 +157,36 @@ export class CurrenciesService implements OnModuleInit {
     });
   }
 
+  async disableMonitoredPair(data: { userId: string; pairId: string }) {
+    const { userId, pairId } = data;
+    await this.prisma.UsersOnPairs.update({
+      where: {
+        userId_pairId: {
+          userId,
+          pairId,
+        },
+      },
+      data: {
+        isEnabled: false,
+      },
+    });
+  }
+
+  async enableMonitoredPair(data: { userId: string; pairId: string }) {
+    const { userId, pairId } = data;
+    await this.prisma.UsersOnPairs.update({
+      where: {
+        userId_pairId: {
+          userId,
+          pairId,
+        },
+      },
+      data: {
+        isEnabled: true,
+      },
+    });
+  }
+
   async getRates(from: string, to: string): Promise<ExchangeRate> {
     const { data } = await firstValueFrom(
       this.httpService.get(

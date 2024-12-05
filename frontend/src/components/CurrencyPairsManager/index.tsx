@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Currency, CurrencyPair } from "../../types";
-import { getCurrencies, getMonitoredPairs, startMonitoringPair, deleteMonitoredPair } from "../../services/api";
+import { getCurrencies, getMonitoredPairs, startMonitoringPair, disableMonitoredPair, enableMonitoredPair } from "../../services/api";
 import { CurrencyPairsConfigurator } from "../CurrencyPairsConfigurator";
 import { MonitoredPairsList } from "../MonitoredPairsList";
 import './styles.css';
@@ -24,9 +24,13 @@ export function CurrencyPairsManager() {
     }
   };
 
-  const removeMonitoredPair = async (pairId: string) => {
+  const toggleMonitoredPair = async (pairId: string, isEnabled: boolean) => {
     try {
-      await deleteMonitoredPair(pairId);
+      if (isEnabled) {
+        await disableMonitoredPair({ userId: '040dff52-8aa1-41a6-bc2f-d578170df96c', pairId });
+      } else {
+        await enableMonitoredPair({ userId: '040dff52-8aa1-41a6-bc2f-d578170df96c', pairId });
+      }
       const { data } = await getMonitoredPairs('040dff52-8aa1-41a6-bc2f-d578170df96c');
       setMonitoredPairs(data);
     } catch (err) {
@@ -43,7 +47,7 @@ export function CurrencyPairsManager() {
       />
       <MonitoredPairsList
         monitoredPairs={monitoredPairs}
-        removeMonitoredPair={removeMonitoredPair}
+        toggleMonitoredPair={toggleMonitoredPair}
       />
     </div>
   );

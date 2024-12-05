@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Patch,
   Query,
 } from '@nestjs/common';
 import { CurrenciesService } from './currencies.service';
@@ -33,6 +34,16 @@ export class CurrenciesController {
     @Body() body: { userId: string; fromCode: string; toCode: string },
   ) {
     return this.currenciesService.startMonitoringPair(body);
+  }
+
+  @Patch('disable')
+  async disableMonitored(@Body() body: { userId: string; pairId: string }) {
+    return this.currenciesService.disableMonitoredPair(body);
+  }
+
+  @Patch('enable')
+  async enableMonitored(@Body() body: { userId: string; pairId: string }) {
+    return this.currenciesService.enableMonitoredPair(body);
   }
 
   @Get('rates')

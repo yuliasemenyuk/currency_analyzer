@@ -3,16 +3,15 @@ import './styles.css';
 
 interface MonitoredPairsListProps {
   monitoredPairs: CurrencyPair[];
-  removeMonitoredPair: (pairId: string) => Promise<void>;
+  toggleMonitoredPair: (pairId: string, isEnabled: boolean) => Promise<void>;
 }
 
 export function MonitoredPairsList({
   monitoredPairs,
-  removeMonitoredPair,
+  toggleMonitoredPair,
 }: MonitoredPairsListProps) {
-  console.log(monitoredPairs, 'monitoredPairs');
-  const handleDelete = async (pairId: string) => {
-    await removeMonitoredPair(pairId);
+  const handleToggle = async (pairId: string, isEnabled: boolean) => {
+    await toggleMonitoredPair(pairId, isEnabled);
   };
 
   return (
@@ -32,10 +31,10 @@ export function MonitoredPairsList({
               </span>
             </div>
             <button
-              className="delete-button"
-              onClick={() => handleDelete(pair.id)}
+              className={`toggle-button ${pair.isEnabled ? "enabled" : "disabled"}`}
+              onClick={() => handleToggle(pair.id, pair.isEnabled)}
             >
-              Delete
+              {pair.isEnabled ? "Disable" : "Enable"}
             </button>
           </div>
         ))}
