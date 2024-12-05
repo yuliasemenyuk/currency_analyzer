@@ -1,14 +1,12 @@
 import "./App.css";
 import { CurrencyPairsManager } from "./components/CurrencyPairsManager";
-import { RuleConfigurator } from "./components/RuleConfigurator";
-import { RulesList } from "./components/RulesList";
+import { RulesManager } from "./components/RuleManager";
 
 function App() {
   return (
     <div className="container">
       <CurrencyPairsManager />
-      <RuleConfigurator />
-      <RulesList />
+      <RulesManager />
       {/* <RatesDisplay />  */}
     </div>
   );

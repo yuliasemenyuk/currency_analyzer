@@ -1,17 +1,22 @@
 import { useState, useEffect } from 'react';
-import { CurrencyPair, Rule } from '../../types';
+import { CurrencyPair } from '../../types';
 import { getMonitoredPairs, createRule } from '../../services/api';
 import './styles.css';
 
-export function RuleConfigurator() {
+interface RuleConfiguratorProps {
+  onRuleAdded: () => void;
+}
+
+export function RuleConfigurator({ onRuleAdded }: RuleConfiguratorProps) {
   const [monitoredPairs, setMonitoredPairs] = useState<CurrencyPair[]>([]);
   const [selectedPairId, setSelectedPairId] = useState('');
   const [percentage, setPercentage] = useState('');
   const [trendDirection, setTrendDirection] = useState<'increase' | 'decrease'>('increase');
+  const userId = '040dff52-8aa1-41a6-bc2f-d578170df96c';
 
   useEffect(() => {
-    getMonitoredPairs('040dff52-8aa1-41a6-bc2f-d578170df96c').then(({data}) => setMonitoredPairs(data));
-  }, []);
+    getMonitoredPairs(userId).then(({data}) => setMonitoredPairs(data));
+  }, [userId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,11 +26,12 @@ export function RuleConfigurator() {
         trendDirection,
         fromCurrencyCode: monitoredPairs.find(pair => pair.id === selectedPairId)?.fromCode || '',
         toCurrencyCode: monitoredPairs.find(pair => pair.id === selectedPairId)?.toCode || '',
-        userId: ''
+        userId: userId,
       });
       setSelectedPairId('');
       setPercentage('');
       setTrendDirection('increase');
+      onRuleAdded();
     } catch (err) {
       console.error(err);
     }
@@ -48,7 +54,6 @@ export function RuleConfigurator() {
             </option>
           ))}
         </select>
-
         <input
           type="number"
           className="percentage-input"
@@ -64,7 +69,6 @@ export function RuleConfigurator() {
           }}
           required
         />
-
         <select
           className="trend-select"
           value={trendDirection}
@@ -73,7 +77,6 @@ export function RuleConfigurator() {
           <option value="increase">Increase</option>
           <option value="decrease">Decrease</option>
         </select>
-
         <button 
           type="submit"
           className="add-rule-button"

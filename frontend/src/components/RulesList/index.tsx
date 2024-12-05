@@ -1,28 +1,23 @@
-import { useEffect, useState } from "react";
-import { Rule, RuleSchema } from "../../types";
-import { getUsersRules, unsubscribeRule, updateRule } from "../../services/api";
-import { z } from "zod";
+import { Rule } from "../../types";
 import "./styles.css";
 
-export function RulesList() {
-  const [rules, setRules] = useState<Rule[]>([]);
+interface RulesListProps {
+  rules: Rule[];
+  editMode: { [key: string]: boolean };
+  editedRule: Partial<Rule>;
+  onToggle: (rule: Rule) => Promise<void>;
+  onEdit: (rule: Partial<Rule>) => void;
+  onSave: (ruleId: string) => Promise<void>;
+}
 
-  useEffect(() => {
-    getUsersRules('040dff52-8aa1-41a6-bc2f-d578170df96c').then(({ data }) => {
-      const validatedRules = z.array(RuleSchema).parse(data);
-      setRules(validatedRules);
-    });
-  }, []);
-
-  const handleToggle = async (id: string, isEnabled: boolean) => {
-    await unsubscribeRule(id, { isEnabled: !isEnabled });
-    setRules(
-      rules.map((rule) =>
-        rule.id === id ? { ...rule, isEnabled: !isEnabled } : rule
-      )
-    );
-  };
-
+export function RulesList({
+  rules,
+  editMode,
+  editedRule,
+  onToggle,
+  onEdit,
+  onSave,
+}: RulesListProps) {
   return (
     <div className="rules-list">
       {rules.map((rule) => (
@@ -31,23 +26,51 @@ export function RulesList() {
             <span>
               {rule.currencyPair.fromCode} → {rule.currencyPair.toCode}
             </span>
-            <span>
-              {rule.percentage}% {rule.trendDirection}
-            </span>
+            {editMode[rule.id] ? (
+              <>
+                <input
+                  type="number"
+                  value={editedRule.percentage ?? rule.percentage}
+                  onChange={(e) =>
+                    onEdit({ ...editedRule, percentage: Number(e.target.value), id: rule.id, currencyPair: rule.currencyPair, trendDirection: rule.trendDirection, isEnabled: rule.isEnabled })
+                  }
+                />
+                <select
+                  value={editedRule.trendDirection ?? rule.trendDirection}
+                  onChange={(e) =>
+                    onEdit({ ...editedRule, trendDirection: e.target.value as 'increase' | 'decrease', id: rule.id, currencyPair: rule.currencyPair, percentage: rule.percentage, isEnabled: rule.isEnabled })
+                  }
+                >
+                  <option value="increase">Increase</option>
+                  <option value="decrease">Decrease</option>
+                </select>
+              </>
+            ) : (
+              <span>
+                {rule.percentage}% {rule.trendDirection}
+              </span>
+            )}
           </div>
           <div className="rule-actions">
             <button
               className={`toggle-button ${
                 rule.isEnabled ? "enabled" : "disabled"
               }`}
-              onClick={() => handleToggle(rule.id, rule.isEnabled)}
+              onClick={() => onToggle(rule)}
             >
               {rule.isEnabled ? "Disable" : "Enable"}
             </button>
-            <button className="edit-button">Edit</button>
+            {editMode[rule.id] ? (
+              <button className="save-button" onClick={() => onSave(rule.id)}>Save</button>
+            ) : (
+              <button className="edit-button" onClick={() => onEdit(rule)}>Edit</button>
+            )}
           </div>
         </div>
       ))}
+      {rules.length === 0 && (
+        <div className="no-rules">No rules yet</div>
+      )}
     </div>
   );
 }

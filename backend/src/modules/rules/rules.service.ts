@@ -61,8 +61,13 @@ export class RulesService {
 
   async createRule(data: AddRuleWithCurrencyCodesDto) {
     console.log('createRule');
-    const { fromCurrencyCode, toCurrencyCode, percentage, trendDirection } =
-      data;
+    const {
+      userId,
+      fromCurrencyCode,
+      toCurrencyCode,
+      percentage,
+      trendDirection,
+    } = data;
 
     const pair = await this.prisma.currencyPair.findUnique({
       where: {
@@ -77,7 +82,7 @@ export class RulesService {
       throw new BadRequestException('Currency pair does not exist.');
     }
 
-    return this.prisma.rule.create({
+    const rule = await this.prisma.rule.create({
       data: {
         currencyPair: { connect: { id: pair.id } },
         percentage,
@@ -85,6 +90,16 @@ export class RulesService {
         isEnabled: true,
       },
     });
+
+    await this.prisma.usersOnRules.create({
+      data: {
+        user: { connect: { id: userId } },
+        rule: { connect: { id: rule.id } },
+        isEnabled: true,
+      },
+    });
+
+    return rule;
   }
 
   async handleUserRuleSubscription(data: AddRuleWithCurrencyCodesDto) {
@@ -116,6 +131,7 @@ export class RulesService {
       newRule = existingRule;
     } else {
       newRule = await this.createRule({
+        userId,
         fromCurrencyCode,
         toCurrencyCode,
         percentage,
@@ -147,7 +163,6 @@ export class RulesService {
     });
   }
 
-  //TODO: Decide on validation type later
   async getAllActiveRules() {
     const activeRules = await this.prisma.rule.findMany({
       where: { isEnabled: true },
@@ -156,7 +171,6 @@ export class RulesService {
         currencyPair: true,
       },
     });
-    // return activeRules;
     return activeRules.map((rule) => ActiveRuleSchema.parse(rule));
   }
 }
