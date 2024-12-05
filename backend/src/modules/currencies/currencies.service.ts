@@ -4,6 +4,8 @@ import {
   CurrencySchema,
   ExchangeRate,
   FrankfurterCurrenciesSchema,
+  StartMonitoringPairDto,
+  ToggleMonitoredPairDto,
 } from './currencies.schema';
 import { PrismaService } from 'prisma/prisma.service';
 import { HttpService } from '@nestjs/axios';
@@ -122,11 +124,7 @@ export class CurrenciesService implements OnModuleInit {
     });
   }
 
-  async startMonitoringPair(data: {
-    userId: string;
-    fromCode: string;
-    toCode: string;
-  }) {
+  async startMonitoringPair(data: StartMonitoringPairDto) {
     const { userId, fromCode, toCode } = data;
     const pair = await this.prisma.currencyPair.findFirst({
       where: {
@@ -157,7 +155,7 @@ export class CurrenciesService implements OnModuleInit {
     });
   }
 
-  async disableMonitoredPair(data: { userId: string; pairId: string }) {
+  async disableMonitoredPair(data: ToggleMonitoredPairDto) {
     const { userId, pairId } = data;
     await this.prisma.UsersOnPairs.update({
       where: {
@@ -172,7 +170,7 @@ export class CurrenciesService implements OnModuleInit {
     });
   }
 
-  async enableMonitoredPair(data: { userId: string; pairId: string }) {
+  async enableMonitoredPair(data: ToggleMonitoredPairDto) {
     const { userId, pairId } = data;
     await this.prisma.UsersOnPairs.update({
       where: {

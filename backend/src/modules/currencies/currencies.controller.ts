@@ -9,8 +9,14 @@ import {
   Query,
 } from '@nestjs/common';
 import { CurrenciesService } from './currencies.service';
-import { Currency, RateQuerySchema } from './currencies.schema';
-import { z } from 'zod';
+import {
+  Currency,
+  RateQuerySchema,
+  StartMonitoringPairSchema,
+  StartMonitoringPairDto,
+  ToggleMonitoredPairSchema,
+  ToggleMonitoredPairDto,
+} from './currencies.schema';
 import { CurrencyPair } from '@prisma/client';
 
 @Controller('currencies')
@@ -30,49 +36,49 @@ export class CurrenciesController {
   }
 
   @Post('monitor')
-  async startMonitoringCurrencies(
-    @Body() body: { userId: string; fromCode: string; toCode: string },
-  ) {
-    return this.currenciesService.startMonitoringPair(body);
+  async startMonitoringCurrencies(@Body() body: StartMonitoringPairDto) {
+    const parsedBody = StartMonitoringPairSchema.safeParse(body);
+    if (!parsedBody.success) {
+      throw new BadRequestException(parsedBody.error.errors);
+    }
+    return this.currenciesService.startMonitoringPair(parsedBody.data);
   }
 
   @Patch('disable')
-  async disableMonitored(@Body() body: { userId: string; pairId: string }) {
-    return this.currenciesService.disableMonitoredPair(body);
+  async disableMonitored(@Body() body: ToggleMonitoredPairDto) {
+    const parsedBody = ToggleMonitoredPairSchema.safeParse(body);
+    if (!parsedBody.success) {
+      throw new BadRequestException(parsedBody.error.errors);
+    }
+    return this.currenciesService.disableMonitoredPair(parsedBody.data);
   }
 
   @Patch('enable')
-  async enableMonitored(@Body() body: { userId: string; pairId: string }) {
-    return this.currenciesService.enableMonitoredPair(body);
+  async enableMonitored(@Body() body: unknown) {
+    const parsedBody = ToggleMonitoredPairSchema.safeParse(body);
+    if (!parsedBody.success) {
+      throw new BadRequestException(parsedBody.error.errors);
+    }
+    return this.currenciesService.enableMonitoredPair(parsedBody.data);
   }
 
   @Get('rates')
-  async getRates(@Query() query: z.infer<typeof RateQuerySchema>) {
-    const validated = RateQuerySchema.parse(query);
-    if (validated.from === validated.to) {
+  async getRates(@Query() query: unknown) {
+    const validated = RateQuerySchema.safeParse(query);
+    if (!validated.success) {
+      throw new BadRequestException(validated.error.errors);
+    }
+    if (validated.data.from === validated.data.to) {
       throw new BadRequestException('From and to currencies must be different');
     }
-    return this.currenciesService.getRates(validated.from, validated.to);
+    return this.currenciesService.getRates(
+      validated.data.from,
+      validated.data.to,
+    );
   }
 
   @Get(':id')
   findById(@Param('id') id: string): string {
     return `This action returns a currency based on id - ${id}`;
   }
-
-  // @Get()
-  // async findAll(): Promise<any[]> {
-  //   return [];
-  // }
-
-  // export class CreateCatDto endpoints should i{
-  //     name: string;
-  //     age: number;
-  //     breed: string;
-  //   }
-
-  //   @Post()
-  //   async create(@Body() createCatDto: CreateCatDto) {
-  //     return 'This action adds a new cat';
-  //   }
 }

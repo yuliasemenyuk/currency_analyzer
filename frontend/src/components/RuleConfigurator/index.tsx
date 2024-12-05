@@ -1,22 +1,18 @@
 import { useState, useEffect } from 'react';
 import { CurrencyPair } from '../../types';
-import { getMonitoredPairs, createRule } from '../../services/api';
+import { createRule } from '../../services/api';
 import './styles.css';
 
 interface RuleConfiguratorProps {
+  monitoredPairs: CurrencyPair[];
   onRuleAdded: () => void;
 }
 
-export function RuleConfigurator({ onRuleAdded }: RuleConfiguratorProps) {
-  const [monitoredPairs, setMonitoredPairs] = useState<CurrencyPair[]>([]);
+export function RuleConfigurator({ monitoredPairs, onRuleAdded }: RuleConfiguratorProps) {
   const [selectedPairId, setSelectedPairId] = useState('');
   const [percentage, setPercentage] = useState('');
   const [trendDirection, setTrendDirection] = useState<'increase' | 'decrease'>('increase');
   const userId = '040dff52-8aa1-41a6-bc2f-d578170df96c';
-
-  useEffect(() => {
-    getMonitoredPairs(userId).then(({data}) => setMonitoredPairs(data));
-  }, [userId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

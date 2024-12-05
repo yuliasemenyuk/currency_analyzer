@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, BadRequestException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserSchema, CreateUserDto } from './users.schema';
 
@@ -6,14 +6,12 @@ import { CreateUserSchema, CreateUserDto } from './users.schema';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post('login')
-  async loginOrCreateUser(@Body() body: CreateUserDto) {
-    const validated = CreateUserSchema.parse(body);
-    const user = await this.usersService.findByEmail(validated.email);
-
-    if (user) {
-      return user;
+  @Post()
+  async createUser(@Body() body: CreateUserDto) {
+    const parsedBody = CreateUserSchema.safeParse(body);
+    if (!parsedBody.success) {
+      throw new BadRequestException(parsedBody.error.errors);
     }
-    return this.usersService.createUser(validated);
+    return this.usersService.createUser(parsedBody.data);
   }
 }

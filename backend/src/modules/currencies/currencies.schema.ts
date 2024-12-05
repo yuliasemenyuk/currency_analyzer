@@ -29,7 +29,20 @@ export const RateQuerySchema = z.object({
   to: z.string().length(3),
 });
 
+export const StartMonitoringPairSchema = z.object({
+  userId: z.string().uuid(),
+  fromCode: z.string().length(3),
+  toCode: z.string().length(3),
+});
+
+export const ToggleMonitoredPairSchema = z.object({
+  userId: z.string().uuid(),
+  pairId: z.string().uuid(),
+});
+
 export type Currency = z.infer<typeof CurrencySchema>;
 export type FrankfurterResponse = z.infer<typeof FrankfurterResponseSchema>;
 export type FrankfurterCurrencies = z.infer<typeof FrankfurterCurrenciesSchema>;
 export type ExchangeRate = z.infer<typeof ExchangeRateSchema>;
+export type StartMonitoringPairDto = z.infer<typeof StartMonitoringPairSchema>;
+export type ToggleMonitoredPairDto = z.infer<typeof ToggleMonitoredPairSchema>;
