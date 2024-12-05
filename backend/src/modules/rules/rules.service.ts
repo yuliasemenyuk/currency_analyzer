@@ -6,8 +6,28 @@ import { ActiveRuleSchema, AddRuleWithCurrencyCodesDto } from './rules.schema';
 export class RulesService {
   constructor(private prisma: PrismaService) {}
 
-  async getAllUsersRules() {
-    return [];
+  async getAllUsersRules(userId: string) {
+    const userRules = await this.prisma.rule.findMany({
+      where: {
+        users: {
+          some: {
+            userId,
+          },
+        },
+      },
+      include: {
+        currencyPair: true,
+        users: {
+          where: { userId },
+          select: { isEnabled: true },
+        },
+      },
+    });
+
+    return userRules.map((rule) => ({
+      ...rule,
+      isEnabled: rule.users[0]?.isEnabled ?? false,
+    }));
   }
 
   async findRuleByCurrencies(data: AddRuleWithCurrencyCodesDto) {
@@ -128,7 +148,7 @@ export class RulesService {
   }
 
   //TODO: Decide on validation type later
-  async getActiveRules() {
+  async getAllActiveRules() {
     const activeRules = await this.prisma.rule.findMany({
       where: { isEnabled: true },
       include: {

@@ -15,8 +15,8 @@ export class RulesController {
   constructor(private readonly rulesService: RulesService) {}
 
   @Get()
-  async getUersRules() {
-    return this.rulesService.getAllUsersRules();
+  async getUersRules(@Query('userId') userId: string) {
+    return this.rulesService.getAllUsersRules(userId);
   }
 
   @Post()

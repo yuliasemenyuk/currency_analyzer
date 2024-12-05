@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Rule, RuleSchema } from "../../types";
-import { getRules, unsubscribeRule, updateRule } from "../../services/api";
+import { getUsersRules, unsubscribeRule, updateRule } from "../../services/api";
 import { z } from "zod";
 import "./styles.css";
 
@@ -8,7 +8,7 @@ export function RulesList() {
   const [rules, setRules] = useState<Rule[]>([]);
 
   useEffect(() => {
-    getRules().then(({ data }) => {
+    getUsersRules('040dff52-8aa1-41a6-bc2f-d578170df96c').then(({ data }) => {
       const validatedRules = z.array(RuleSchema).parse(data);
       setRules(validatedRules);
     });

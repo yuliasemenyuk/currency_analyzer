@@ -22,7 +22,7 @@ export class SchedulerService {
   }
 
   private async fetchActiveCurrencyRates() {
-    const activeRules = await this.RulesService.getActiveRules();
+    const activeRules = await this.RulesService.getAllActiveRules();
 
     for (const rule of activeRules) {
       const cacheKey = `currency_rate_${rule.currencyPair.fromCode}_${rule.currencyPair.toCode}`;
