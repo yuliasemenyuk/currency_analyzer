@@ -42,6 +42,10 @@ export class CurrenciesService implements OnModuleInit {
       const currencies = parsedData.data;
       const currencyCodes = Object.keys(currencies);
 
+      await this.deleteRulesWithNonExistingPairs(currencyCodes);
+
+      await this.deletePairsWithNonExistingCurrencies(currencyCodes);
+
       await this.prisma.currency.deleteMany({
         where: { code: { notIn: currencyCodes } },
       });
@@ -71,8 +75,6 @@ export class CurrenciesService implements OnModuleInit {
       } else {
         await this.updatePairs(currencyCodes);
       }
-
-      await this.deleteRulesWithNonExistingPairs();
     } catch (error) {
       if (error instanceof InvalidCurrencyDataError) {
         throw error;
@@ -84,52 +86,85 @@ export class CurrenciesService implements OnModuleInit {
   }
 
   private async updatePairs(currencyCodes: string[]) {
-    await this.prisma.currencyPair.deleteMany({
+    // await this.prisma.currencyPair.deleteMany({
+    //   where: {
+    //     OR: [
+    //       { fromCode: { notIn: currencyCodes } },
+    //       { toCode: { notIn: currencyCodes } },
+    //     ],
+    //   },
+    // });
+
+    for (const fromCode of currencyCodes) {
+      for (const toCode of currencyCodes) {
+        if (fromCode !== toCode) {
+          await this.prisma.currencyPair.upsert({
+            where: { fromCode_toCode: { fromCode, toCode } },
+            update: {},
+            create: {
+              fromCode,
+              toCode,
+            },
+          });
+        }
+      }
+    }
+  }
+
+  private async deleteRulesWithNonExistingPairs(currencyCodes: string[]) {
+    const pairsToDelete = await this.prisma.currencyPair.findMany({
       where: {
         OR: [
           { fromCode: { notIn: currencyCodes } },
           { toCode: { notIn: currencyCodes } },
         ],
       },
-    });
-
-    for (const fromCode of currencyCodes) {
-      for (const toCode of currencyCodes) {
-        await this.upsertCurrencyPair(fromCode, toCode);
-      }
-    }
-  }
-
-  private async upsertCurrencyPair(fromCode: string, toCode: string) {
-    if (fromCode !== toCode) {
-      await this.prisma.currencyPair.upsert({
-        where: { fromCode_toCode: { fromCode, toCode } },
-        update: {},
-        create: {
-          fromCode,
-          toCode,
-        },
-      });
-    }
-  }
-
-  private async deleteRulesWithNonExistingPairs() {
-    const existingPairs = await this.prisma.currencyPair.findMany({
       select: { id: true },
     });
-    const existingPairIds = existingPairs.map((pair) => pair.id);
+    const pairIdsToDelete = pairsToDelete.map((pair) => pair.id);
 
     await this.prisma.usersOnRules.deleteMany({
       where: {
         rule: {
-          pairId: { notIn: existingPairIds },
+          pairId: { in: pairIdsToDelete },
         },
       },
     });
 
     await this.prisma.rule.deleteMany({
       where: {
-        pairId: { notIn: existingPairIds },
+        pairId: { in: pairIdsToDelete },
+      },
+    });
+  }
+
+  private async deletePairsWithNonExistingCurrencies(currencyCodes: string[]) {
+    const pairsToDelete = await this.prisma.currencyPair.findMany({
+      where: {
+        OR: [
+          { fromCode: { notIn: currencyCodes } },
+          { toCode: { notIn: currencyCodes } },
+        ],
+      },
+      select: { id: true },
+    });
+    const pairIdsToDelete = pairsToDelete.map((pair) => pair.id);
+
+    await this.prisma.currencyRateHistory.deleteMany({
+      where: {
+        pairId: { in: pairIdsToDelete },
+      },
+    });
+
+    await this.prisma.usersOnPairs.deleteMany({
+      where: {
+        pairId: { in: pairIdsToDelete },
+      },
+    });
+
+    await this.prisma.currencyPair.deleteMany({
+      where: {
+        id: { in: pairIdsToDelete },
       },
     });
   }
@@ -183,7 +218,7 @@ export class CurrenciesService implements OnModuleInit {
     });
 
     if (!pair) {
-      throw new PairNotFoundError(fromCode, toCode);
+      throw new PairNotFoundError(pair.id);
     }
 
     const existingSubscription = await this.prisma.UsersOnPairs.findUnique({

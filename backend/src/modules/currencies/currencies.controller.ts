@@ -63,16 +63,12 @@ export class CurrenciesController {
       throw new BadRequestException(validated.error.errors);
     }
     try {
-      console.log(
-        await this.currenciesService.startMonitoringPair(validated.data),
-      );
       return await this.currenciesService.startMonitoringPair(validated.data);
     } catch (error) {
       if (error instanceof CurrencyNotFoundError) {
         throw new NotFoundException(error.message);
       }
       if (error instanceof DuplicatePairError) {
-        console.log('DuplicatePairError', error.message);
         throw new ConflictException(error.message);
       }
       throw new InternalServerErrorException('Failed to start monitoring');
