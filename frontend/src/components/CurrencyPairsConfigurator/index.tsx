@@ -23,10 +23,10 @@ export function CurrencyPairsConfigurator({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const pairExists = monitoredPairs.some(pair => pair.fromCode === from && pair.toCode === to);
-    if (pairExists) {
-      alert("This currency pair is already being monitored.");
-      return;
-    }
+    // if (pairExists) {
+    //   alert("This currency pair is already being monitored.");
+    //   return;
+    // }
     await addMonitoredPair(from, to);
     setFrom("");
     setTo("");

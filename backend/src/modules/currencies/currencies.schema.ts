@@ -6,14 +6,10 @@ export const CurrencySchema = z.object({
   name: z.string().min(1),
 });
 
-export const FrankfurterResponseSchema = z.object({
-  amount: z.number(),
-  base: z.string(),
-  date: z.string(),
-  rates: z.record(z.number()),
-});
-
-export const FrankfurterCurrenciesSchema = z.record(z.string());
+export const CurrenciesResponseSchema = z.record(
+  z.string().length(3),
+  z.string().min(1),
+);
 
 export const ExchangeRateSchema = z.object({
   fromCurrency: z.string(),
@@ -41,8 +37,7 @@ export const ToggleMonitoredPairSchema = z.object({
 });
 
 export type Currency = z.infer<typeof CurrencySchema>;
-export type FrankfurterResponse = z.infer<typeof FrankfurterResponseSchema>;
-export type FrankfurterCurrencies = z.infer<typeof FrankfurterCurrenciesSchema>;
+export type CurrenciesResponse = z.infer<typeof CurrenciesResponseSchema>;
 export type ExchangeRate = z.infer<typeof ExchangeRateSchema>;
 export type StartMonitoringPairDto = z.infer<typeof StartMonitoringPairSchema>;
 export type ToggleMonitoredPairDto = z.infer<typeof ToggleMonitoredPairSchema>;

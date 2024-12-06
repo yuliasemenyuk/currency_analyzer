@@ -2,8 +2,8 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import {
   Currency,
   CurrencySchema,
+  CurrenciesResponseSchema,
   ExchangeRate,
-  FrankfurterCurrenciesSchema,
   StartMonitoringPairDto,
   ToggleMonitoredPairDto,
 } from './currencies.schema';
@@ -11,6 +11,12 @@ import { PrismaService } from 'prisma/prisma.service';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { CurrencyPair } from '@prisma/client';
+import {
+  InvalidCurrencyDataError,
+  DuplicatePairError,
+  SameCurrencyError,
+  PairNotFoundError,
+} from './currencies.errors';
 
 // const apiUrl = 'https://api.frankfurter.app';
 const apiUrl = 'https://openexchangerates.org/api';
@@ -24,43 +30,56 @@ export class CurrenciesService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    const { data } = await firstValueFrom(
-      this.httpService.get(`${apiUrl}/currencies.json?app_id=${API_KEY}`),
-    );
-    const currencies = FrankfurterCurrenciesSchema.parse(data);
-    const currencyCodes = Object.keys(currencies);
+    try {
+      const { data } = await firstValueFrom(
+        this.httpService.get(`${apiUrl}/currencies.json?app_id=${API_KEY}`),
+      );
+      const parsedData = CurrenciesResponseSchema.safeParse(data);
+      if (!parsedData.success) {
+        throw new InvalidCurrencyDataError();
+      }
 
-    // Handle currencies
-    await this.prisma.currency.deleteMany({
-      where: { code: { notIn: currencyCodes } },
-    });
+      const currencies = parsedData.data;
+      const currencyCodes = Object.keys(currencies);
 
-    for (const [code, name] of Object.entries(currencies)) {
-      await this.prisma.currency.upsert({
-        where: { code },
-        update: { name },
-        create: { code, name },
+      await this.prisma.currency.deleteMany({
+        where: { code: { notIn: currencyCodes } },
       });
-    }
 
-    const existingPairs = await this.prisma.currencyPair.findMany();
+      for (const [code, name] of Object.entries(currencies)) {
+        await this.prisma.currency.upsert({
+          where: { code },
+          update: { name },
+          create: { code, name },
+        });
+      }
 
-    if (existingPairs.length === 0) {
-      for (const fromCode of currencyCodes) {
-        for (const toCode of currencyCodes) {
-          if (fromCode !== toCode) {
-            await this.prisma.currencyPair.create({
-              data: {
-                fromCode,
-                toCode,
-                // isEnabled: true,
-              },
-            });
+      const existingPairs = await this.prisma.currencyPair.findMany();
+      if (existingPairs.length === 0) {
+        for (const fromCode of currencyCodes) {
+          for (const toCode of currencyCodes) {
+            if (fromCode !== toCode) {
+              await this.prisma.currencyPair.create({
+                data: {
+                  fromCode,
+                  toCode,
+                },
+              });
+            }
           }
         }
+      } else {
+        await this.updatePairs(currencyCodes);
       }
-    } else {
-      await this.updatePairs(currencyCodes);
+
+      await this.deleteRulesWithNonExistingPairs();
+    } catch (error) {
+      if (error instanceof InvalidCurrencyDataError) {
+        throw error;
+      }
+      throw new Error(
+        `Failed to initialize currencies: ${(error as Error).message}`,
+      );
     }
   }
 
@@ -76,19 +95,43 @@ export class CurrenciesService implements OnModuleInit {
 
     for (const fromCode of currencyCodes) {
       for (const toCode of currencyCodes) {
-        if (fromCode !== toCode) {
-          await this.prisma.currencyPair.upsert({
-            where: { fromCode_toCode: { fromCode, toCode } },
-            update: {},
-            create: {
-              fromCode,
-              toCode,
-              // isEnabled: false,
-            },
-          });
-        }
+        await this.upsertCurrencyPair(fromCode, toCode);
       }
     }
+  }
+
+  private async upsertCurrencyPair(fromCode: string, toCode: string) {
+    if (fromCode !== toCode) {
+      await this.prisma.currencyPair.upsert({
+        where: { fromCode_toCode: { fromCode, toCode } },
+        update: {},
+        create: {
+          fromCode,
+          toCode,
+        },
+      });
+    }
+  }
+
+  private async deleteRulesWithNonExistingPairs() {
+    const existingPairs = await this.prisma.currencyPair.findMany({
+      select: { id: true },
+    });
+    const existingPairIds = existingPairs.map((pair) => pair.id);
+
+    await this.prisma.usersOnRules.deleteMany({
+      where: {
+        rule: {
+          pairId: { notIn: existingPairIds },
+        },
+      },
+    });
+
+    await this.prisma.rule.deleteMany({
+      where: {
+        pairId: { notIn: existingPairIds },
+      },
+    });
   }
 
   async findAll(): Promise<Currency[]> {
@@ -126,6 +169,12 @@ export class CurrenciesService implements OnModuleInit {
 
   async startMonitoringPair(data: StartMonitoringPairDto) {
     const { userId, fromCode, toCode } = data;
+    console.log('userId', userId);
+    console.log('fromCode', fromCode);
+    console.log('toCode', toCode);
+    if (fromCode === toCode) {
+      throw new SameCurrencyError(fromCode, toCode);
+    }
     const pair = await this.prisma.currencyPair.findFirst({
       where: {
         fromCode,
@@ -134,7 +183,20 @@ export class CurrenciesService implements OnModuleInit {
     });
 
     if (!pair) {
-      throw new Error('Pair not found');
+      throw new PairNotFoundError(fromCode, toCode);
+    }
+
+    const existingSubscription = await this.prisma.UsersOnPairs.findUnique({
+      where: {
+        userId_pairId: {
+          userId,
+          pairId: pair.id,
+        },
+      },
+    });
+
+    if (existingSubscription) {
+      throw new DuplicatePairError(fromCode, toCode);
     }
 
     await this.prisma.UsersOnPairs.upsert({
