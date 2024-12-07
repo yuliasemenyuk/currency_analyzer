@@ -8,6 +8,7 @@ import {
   RuleSubscriptionError,
   SameCurrencyRuleError,
   PairNotFoundError,
+  RuleAlreadySubscribedError,
 } from './rules.errors';
 
 @Injectable()
@@ -102,17 +103,6 @@ export class RulesService {
         throw new PairNotFoundError(`${fromCurrencyCode}/${toCurrencyCode}`);
       }
 
-      const existingRulesCount = await this.prisma.rule.count({
-        where: {
-          users: { some: { userId } },
-          trendDirection,
-        },
-      });
-
-      if (existingRulesCount >= 5) {
-        throw new MaxRulesReachedError(userId, trendDirection);
-      }
-
       const rule = await this.prisma.rule.create({
         data: {
           currencyPair: { connect: { id: pair.id } },
@@ -156,12 +146,38 @@ export class RulesService {
         throw new SameCurrencyRuleError(fromCurrencyCode);
       }
 
+      const existingRulesCount = await this.prisma.rule.count({
+        where: {
+          users: { some: { userId } },
+          trendDirection,
+        },
+      });
+
+      if (existingRulesCount >= 5) {
+        throw new MaxRulesReachedError(userId, trendDirection);
+      }
+
       const existingRule = await this.findRuleByCurrencies({
         fromCurrencyCode,
         toCurrencyCode,
         percentage,
         trendDirection,
       });
+
+      if (existingRule) {
+        const existingSubscription = await this.prisma.usersOnRules.findUnique({
+          where: {
+            userId_ruleId: {
+              userId,
+              ruleId: existingRule.id,
+            },
+          },
+        });
+
+        if (existingSubscription) {
+          throw new RuleAlreadySubscribedError(userId, existingRule.id);
+        }
+      }
 
       let newRule;
       if (existingRule) {
@@ -177,7 +193,8 @@ export class RulesService {
       if (
         error instanceof SameCurrencyRuleError ||
         error instanceof PairNotFoundError ||
-        error instanceof MaxRulesReachedError
+        error instanceof MaxRulesReachedError ||
+        error instanceof RuleAlreadySubscribedError
       ) {
         throw error;
       }

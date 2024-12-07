@@ -19,6 +19,7 @@ import {
   SameCurrencyRuleError,
   RuleSubscriptionError,
   RuleNotFoundError,
+  RuleAlreadySubscribedError,
 } from './rules.errors';
 import { z } from 'zod';
 
@@ -51,10 +52,11 @@ export class RulesController {
     try {
       return await this.rulesService.handleUserRuleCreation(validated.data);
     } catch (error) {
-      if (error instanceof MaxRulesReachedError) {
-        throw new BadRequestException(error.message);
-      }
-      if (error instanceof SameCurrencyRuleError) {
+      if (
+        error instanceof MaxRulesReachedError ||
+        error instanceof SameCurrencyRuleError ||
+        error instanceof RuleAlreadySubscribedError
+      ) {
         throw new BadRequestException(error.message);
       }
       throw new InternalServerErrorException('Failed to add rule');

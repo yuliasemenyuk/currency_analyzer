@@ -41,3 +41,9 @@ export class PairNotFoundError extends Error {
     super(`Pair ${pairId} not found`);
   }
 }
+
+export class RuleAlreadySubscribedError extends Error {
+  constructor(userId: string, ruleId: string) {
+    super(`User ${userId} is already subscribed to rule ${ruleId}`);
+  }
+}
