@@ -63,6 +63,7 @@ h3 {
 }
 .save-button {
   padding: 8px 16px;
+  margin-left: 10px;
   border: none;
   border-radius: 4px;
   font-size: 14px;
