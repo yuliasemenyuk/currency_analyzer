@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CurrencyPair } from '../../types';
 import { createRule } from '../../services/api';
+import { toast } from 'react-toastify';
 import './styles.css';
 
 interface RuleConfiguratorProps {
@@ -28,8 +29,10 @@ export function RuleConfigurator({ monitoredPairs, onRuleAdded }: RuleConfigurat
       setPercentage('');
       setTrendDirection('increase');
       onRuleAdded();
+      toast.success('Rule added successfully');
     } catch (err) {
-      console.error(err);
+      const error = err as { response: { data: { message: string } } };
+      toast.error(error.response.data.message);
     }
   };
 

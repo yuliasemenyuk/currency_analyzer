@@ -175,7 +175,8 @@ export class RulesService {
         });
 
         if (existingSubscription) {
-          throw new RuleAlreadySubscribedError(userId, existingRule.id);
+          throw new RuleAlreadySubscribedError();
+          // userId, existingRule.id);
         }
       }
 
