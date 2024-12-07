@@ -5,7 +5,7 @@ import { CurrencyPairsConfigurator } from "../CurrencyPairsConfigurator";
 import { MonitoredPairsList } from "../MonitoredPairsList";
 import { RulesList } from "../RulesList";
 import { RuleConfigurator } from "../RuleConfigurator";
-import { createRule, getUsersRules, unsubscribeRule } from "../../services/api";
+import { createRule, getUsersRules, toggleRuleSubscription } from "../../services/api";
 import {z} from 'zod';
 import "./styles.css";
 
@@ -62,17 +62,7 @@ export function RulesManager() {
   };
 
   const handleToggle = async (rule: Rule) => {
-    if (rule.isEnabled) {
-      await unsubscribeRule(rule.id, { isEnabled: false });
-    } else {
-      await createRule({
-        userId,
-        fromCurrencyCode: rule.currencyPair.fromCode,
-        toCurrencyCode: rule.currencyPair.toCode,
-        percentage: rule.percentage,
-        trendDirection: rule.trendDirection,
-      });
-    }
+      await toggleRuleSubscription(rule.id, { isEnabled: !rule.isEnabled });
     await fetchRules();
   };
 

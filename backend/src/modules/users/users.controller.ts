@@ -1,17 +1,36 @@
-import { Controller, Post, Body, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  BadRequestException,
+  InternalServerErrorException,
+  ConflictException,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserSchema, CreateUserDto } from './users.schema';
+import { DuplicateUserError, UserNotFoundError } from './users.errors';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  async createUser(@Body() body: CreateUserDto) {
-    const parsedBody = CreateUserSchema.safeParse(body);
-    if (!parsedBody.success) {
-      throw new BadRequestException(parsedBody.error.errors);
+  async createUser(@Body() body: unknown): Promise<CreateUserDto> {
+    const validated = CreateUserSchema.safeParse(body);
+    if (!validated.success) {
+      throw new BadRequestException(validated.error.errors);
     }
-    return this.usersService.createUser(parsedBody.data);
+
+    try {
+      return await this.usersService.createUser(validated.data);
+    } catch (error) {
+      if (error instanceof DuplicateUserError) {
+        throw new ConflictException(error.message);
+      }
+      if (error instanceof UserNotFoundError) {
+        throw new BadRequestException(error.message);
+      }
+      throw new InternalServerErrorException('Failed to create user');
+    }
   }
 }

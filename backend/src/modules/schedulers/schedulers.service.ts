@@ -97,32 +97,55 @@ export class SchedulerService {
     trendDirection: string,
     pairId: string,
   ): Promise<boolean> {
-    const previousRate = await this.getPreviousRate(pairId);
-    if (!previousRate) return false;
+    try {
+      const previousRate = await this.getPreviousRate(pairId);
+      if (!previousRate) {
+        this.logger.warn(`No previous rate found for pair ${pairId}`);
+        return false;
+      }
 
-    console.log('currentRate', currentRate);
-    console.log('previousRate', previousRate);
+      this.logger.debug('Rate comparison:', {
+        currentRate,
+        previousRate,
+        trendDirection,
+        percentage,
+      });
 
-    const percentageChange = Math.round(
-      ((currentRate - previousRate) / previousRate) * 100,
-    );
-    console.log('actual percentage change', percentageChange + '%');
-    console.log('target percentage', percentage + '%');
-    console.log('direction', trendDirection);
+      const percentageChange = Math.round(
+        ((currentRate - previousRate) / previousRate) * 100,
+      );
 
-    return trendDirection === 'increase'
-      ? percentageChange >= percentage
-      : percentageChange <= -percentage;
+      this.logger.debug('Change calculation:', {
+        percentageChange,
+        targetPercentage: percentage,
+        direction: trendDirection,
+      });
+
+      return trendDirection === 'increase'
+        ? percentageChange >= percentage
+        : percentageChange <= -percentage;
+    } catch (error) {
+      this.logger.error(
+        `Failed to check rule satisfaction for pair ${pairId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 
   async getPreviousRate(pairId: string): Promise<number | null> {
-    const previousRateRecord = await this.prisma.currencyRateHistory.findFirst({
-      where: { pairId },
-      orderBy: { timestamp: 'desc' },
-      skip: 1,
-    });
+    try {
+      const previousRateRecord =
+        await this.prisma.currencyRateHistory.findFirst({
+          where: { pairId },
+          orderBy: { timestamp: 'desc' },
+          skip: 1,
+        });
 
-    console.log('previousRateRecord', previousRateRecord);
-    return previousRateRecord ? previousRateRecord.rate : null;
+      this.logger.debug('Previous rate record:', previousRateRecord);
+      return previousRateRecord?.rate ?? null;
+    } catch (error) {
+      this.logger.error(
+        `Failed to get previous rate for pair ${pairId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 }
