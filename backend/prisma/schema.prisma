@@ -21,58 +21,58 @@ model Currency {
 }
 
 model CurrencyPair {
- id           String   @id @default(uuid())
- fromCurrency Currency @relation("FromCurrency", fields: [fromCode], references: [code])
- toCurrency   Currency @relation("ToCurrency", fields: [toCode], references: [code])
- fromCode     String
- toCode       String
- rules        Rule[]
- users        UsersOnPairs[]
- CurrencyRateHistory CurrencyRateHistory[]
- @@unique([fromCode, toCode])
+  id           String   @id @default(uuid())
+  fromCurrency Currency @relation("FromCurrency", fields: [fromCode], references: [code], onDelete: Cascade)
+  toCurrency   Currency @relation("ToCurrency", fields: [toCode], references: [code], onDelete: Cascade)
+  fromCode     String
+  toCode       String
+  rules        Rule[]
+  users        UsersOnPairs[]
+  CurrencyRateHistory CurrencyRateHistory[]
+  @@unique([fromCode, toCode])
 }
 
 model CurrencyRateHistory {
   id             String   @id @default(uuid())
-  currencyPair   CurrencyPair @relation(fields: [pairId], references: [id])
+  currencyPair   CurrencyPair @relation(fields: [pairId], references: [id], onDelete: Cascade)
   pairId         String
   rate           Float
   timestamp      DateTime @default(now())
 }
 
 model Rule {
-  id           String       @id @default(uuid())
-  currencyPair CurrencyPair @relation(fields: [pairId], references: [id])
-  pairId       String
-  percentage   Float
+  id             String       @id @default(uuid())
+  currencyPair   CurrencyPair @relation(fields: [pairId], references: [id], onDelete: Cascade)
+  pairId         String
+  percentage     Float
   trendDirection TrendDirection
-  users        UsersOnRules[]
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  isEnabled    Boolean      @default(false)
+  users          UsersOnRules[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  isEnabled      Boolean      @default(false)
 }
 
 model User {
- id          String          @id @default(uuid())
- email       String          @unique
- pairs       UsersOnPairs[]
- rules       UsersOnRules[]
+  id          String          @id @default(uuid())
+  email       String          @unique
+  pairs       UsersOnPairs[]
+  rules       UsersOnRules[]
 }
 
 model UsersOnPairs {
- user     User        @relation(fields: [userId], references: [id])
- userId   String
- pair     CurrencyPair @relation(fields: [pairId], references: [id])
- pairId   String
- isEnabled Boolean    @default(true)
-
- @@id([userId, pairId])
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String
+  pair     CurrencyPair @relation(fields: [pairId], references: [id], onDelete: Cascade)
+  pairId   String
+  isEnabled Boolean    @default(true)
+  @@id([userId, pairId])
 }
+
 model UsersOnRules {
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
-  rule   Rule   @relation(fields: [ruleId], references: [id])
-  ruleId String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String
+  rule     Rule   @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  ruleId   String
   isEnabled Boolean @default(false)
   @@id([userId, ruleId])
 }
