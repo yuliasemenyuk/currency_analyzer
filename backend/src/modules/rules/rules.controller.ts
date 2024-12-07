@@ -6,6 +6,7 @@ import {
   Param,
   Query,
   Get,
+  Delete,
   BadRequestException,
   InternalServerErrorException,
   ConflictException,
@@ -89,6 +90,32 @@ export class RulesController {
       throw new InternalServerErrorException(
         'Failed to change subscription status',
       );
+    }
+  }
+
+  @Delete(':ruleId')
+  async removeRule(
+    @Param('ruleId') ruleId: string,
+    @Query('userId') userId: string,
+  ) {
+    const validatedRuleId = z.string().uuid().safeParse(ruleId);
+    const validatedUserId = z.string().uuid().safeParse(userId);
+
+    if (!validatedRuleId.success || !validatedUserId.success) {
+      throw new BadRequestException('Invalid rule id or user id format');
+    }
+
+    try {
+      await this.rulesService.removeRule(
+        validatedRuleId.data,
+        validatedUserId.data,
+      );
+      return { message: 'Rule removed successfully' };
+    } catch (error) {
+      if (error instanceof RuleNotFoundError) {
+        throw new NotFoundException(error.message);
+      }
+      throw new InternalServerErrorException('Failed to remove rule');
     }
   }
 }

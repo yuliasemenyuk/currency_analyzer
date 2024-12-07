@@ -208,6 +208,19 @@ export class RulesService {
     }
   }
 
+  async removeRule(ruleId: string, userId: string) {
+    try {
+      await this.prisma.usersOnRules.delete({
+        where: {
+          userId_ruleId: { userId, ruleId },
+        },
+      });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      throw new RuleNotFoundError(ruleId);
+    }
+  }
+
   async getAllActiveRules() {
     try {
       const activeRules = await this.prisma.rule.findMany({

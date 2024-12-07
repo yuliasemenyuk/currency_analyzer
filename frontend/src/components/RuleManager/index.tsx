@@ -5,7 +5,7 @@ import { CurrencyPairsConfigurator } from "../CurrencyPairsConfigurator";
 import { MonitoredPairsList } from "../MonitoredPairsList";
 import { RulesList } from "../RulesList";
 import { RuleConfigurator } from "../RuleConfigurator";
-import { createRule, getUsersRules, toggleRuleSubscription } from "../../services/api";
+import { createRule, getUsersRules, toggleRuleSubscription, removeRule } from "../../services/api";
 import {z} from 'zod';
 import "./styles.css";
 
@@ -80,6 +80,7 @@ export function RulesManager() {
         percentage: editedRule.percentage,
         trendDirection: editedRule.trendDirection,
       });
+      await removeRule(ruleId, userId);
       await fetchRules();
       setEditMode({ ...editMode, [ruleId]: false });
     }

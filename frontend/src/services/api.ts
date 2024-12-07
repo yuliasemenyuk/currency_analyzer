@@ -15,3 +15,4 @@ export const createRule = (data: AddRuleWithCurrencyCodesDto) => api.post('/rule
 export const getUsersRules = (userId: string) => api.get(`/rules?userId=${userId}`);
 // export const updateRule = (id: string, data: Partial<AddRuleWithCurrencyCodesDto>) => api.put(`/rules/${id}`, data);
 export const toggleRuleSubscription = (ruleId: string, p0: { isEnabled: boolean; }) => api.patch(`/rules/${ruleId}/toggle?userId=040dff52-8aa1-41a6-bc2f-d578170df96c`);
+export const removeRule = (ruleId: string, userId: string) => api.delete(`/rules/${ruleId}?userId=${userId}`);
