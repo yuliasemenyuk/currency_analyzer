@@ -5,8 +5,8 @@ import {
   CurrenciesResponseSchema,
   ExchangeRateSchema,
   ExchangeRate,
-  StartMonitoringPairDto,
-  ToggleMonitoredPairDto,
+  MonitoringPairServiceDto,
+  ToggleMonitorServiceDto,
 } from './currencies.schema';
 import { PrismaService } from 'prisma/prisma.service';
 import { HttpService } from '@nestjs/axios';
@@ -300,7 +300,7 @@ export class CurrenciesService implements OnModuleInit {
     }
   }
 
-  async startMonitoringPair(data: StartMonitoringPairDto) {
+  async startMonitoringPair(data: MonitoringPairServiceDto) {
     const { userId, fromCode, toCode } = data;
 
     try {
@@ -348,7 +348,7 @@ export class CurrenciesService implements OnModuleInit {
     }
   }
 
-  async disableMonitoredPair(data: ToggleMonitoredPairDto) {
+  async disableMonitoredPair(data: ToggleMonitorServiceDto) {
     const { userId, pairId } = data;
 
     try {
@@ -378,7 +378,7 @@ export class CurrenciesService implements OnModuleInit {
     }
   }
 
-  async enableMonitoredPair(data: ToggleMonitoredPairDto) {
+  async enableMonitoredPair(data: ToggleMonitorServiceDto) {
     const { userId, pairId } = data;
 
     try {

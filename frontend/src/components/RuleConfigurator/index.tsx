@@ -13,7 +13,6 @@ export function RuleConfigurator({ monitoredPairs, onRuleAdded }: RuleConfigurat
   const [selectedPairId, setSelectedPairId] = useState('');
   const [percentage, setPercentage] = useState('');
   const [trendDirection, setTrendDirection] = useState<'increase' | 'decrease'>('increase');
-  const userId = '040dff52-8aa1-41a6-bc2f-d578170df96c';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +22,6 @@ export function RuleConfigurator({ monitoredPairs, onRuleAdded }: RuleConfigurat
         trendDirection,
         fromCurrencyCode: monitoredPairs.find(pair => pair.id === selectedPairId)?.fromCode || '',
         toCurrencyCode: monitoredPairs.find(pair => pair.id === selectedPairId)?.toCode || '',
-        userId: userId,
       });
       setSelectedPairId('');
       setPercentage('');

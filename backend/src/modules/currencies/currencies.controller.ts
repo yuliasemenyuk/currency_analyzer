@@ -6,29 +6,31 @@ import {
   Post,
   Patch,
   Query,
+  UseGuards,
   BadRequestException,
   NotFoundException,
   ConflictException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { CurrenciesService } from './currencies.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
   Currency,
   RateQuerySchema,
-  StartMonitoringPairSchema,
-  // StartMonitoringPairDto,
-  ToggleMonitoredPairSchema,
-  // ToggleMonitoredPairDto,
+  MonitoringPairRequestSchema,
+  ToggleMonitorRequestSchema,
+  MonitoringPairServiceSchema,
+  ToggleMonitorServiceSchema,
 } from './currencies.schema';
+import { User } from '../../common/decorators/user.decorator';
 import {
   DuplicatePairError,
-  // CurrencyNotFoundError,
   PairNotFoundError,
   InvalidCurrencyDataError,
   SameCurrencyError,
 } from './currencies.errors';
 import { CurrencyPair } from '@prisma/client';
-import z from 'zod';
+// import z from 'zod';
 
 @Controller('currencies')
 export class CurrenciesController {
@@ -46,18 +48,31 @@ export class CurrenciesController {
     }
   }
 
+  // @Get('monitored')
+  // @UseGuards(BasicAuthGuard)
+  // async getMonitoredCurrencies(
+  //   @User() user,
+  //   @Query('userId') userId: string,
+  // ): Promise<CurrencyPair[]> {
+  //   console.log('user', user);
+  //   const validated = z.string().uuid().safeParse(userId);
+
+  //   if (!validated.success) {
+  //     throw new BadRequestException('Invalid user id format');
+  //   }
+
+  //   try {
+  //     return await this.currenciesService.getMonitoredPairs(validated.data);
+  //     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  //   } catch (error) {
+  //     throw new InternalServerErrorException('Failed to fetch monitored pairs');
+  //   }
+  // }
   @Get('monitored')
-  async getMonitoredCurrencies(
-    @Query('userId') userId: string,
-  ): Promise<CurrencyPair[]> {
-    const validated = z.string().uuid().safeParse(userId);
-
-    if (!validated.success) {
-      throw new BadRequestException('Invalid user id format');
-    }
-
+  @UseGuards(JwtAuthGuard)
+  async getMonitoredCurrencies(@User() user): Promise<CurrencyPair[]> {
     try {
-      return await this.currenciesService.getMonitoredPairs(validated.data);
+      return await this.currenciesService.getMonitoredPairs(user.id);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       throw new InternalServerErrorException('Failed to fetch monitored pairs');
@@ -65,14 +80,20 @@ export class CurrenciesController {
   }
 
   @Post('monitor')
-  async startMonitoringCurrencies(@Body() body: unknown) {
-    const validated = StartMonitoringPairSchema.safeParse(body);
+  @UseGuards(JwtAuthGuard)
+  async startMonitoringCurrencies(@User() user, @Body() body: unknown) {
+    const validated = MonitoringPairRequestSchema.safeParse(body);
     if (!validated.success) {
       throw new BadRequestException(validated.error.errors);
     }
 
+    const serviceData = MonitoringPairServiceSchema.parse({
+      ...validated.data,
+      userId: user.id,
+    });
+
     try {
-      return await this.currenciesService.startMonitoringPair(validated.data);
+      return await this.currenciesService.startMonitoringPair(serviceData);
     } catch (error) {
       if (error instanceof SameCurrencyError) {
         throw new BadRequestException((error as Error).message);
@@ -88,14 +109,19 @@ export class CurrenciesController {
   }
 
   @Patch('disable')
-  async disableMonitored(@Body() body: unknown) {
-    const validated = ToggleMonitoredPairSchema.safeParse(body);
+  @UseGuards(JwtAuthGuard)
+  async disableMonitored(@User() user, @Body() body: unknown) {
+    const validated = ToggleMonitorRequestSchema.safeParse(body);
     if (!validated.success) {
       throw new BadRequestException(validated.error.errors);
     }
 
+    const serviceData = ToggleMonitorServiceSchema.parse({
+      ...validated.data,
+      userId: user.id,
+    });
     try {
-      return await this.currenciesService.disableMonitoredPair(validated.data);
+      return await this.currenciesService.disableMonitoredPair(serviceData);
     } catch (error) {
       if (error instanceof PairNotFoundError) {
         throw new NotFoundException(error.message);
@@ -105,14 +131,20 @@ export class CurrenciesController {
   }
 
   @Patch('enable')
-  async enableMonitored(@Body() body: unknown) {
-    const validated = ToggleMonitoredPairSchema.safeParse(body);
+  @UseGuards(JwtAuthGuard)
+  async enableMonitored(@User() user, @Body() body: unknown) {
+    const validated = ToggleMonitorRequestSchema.safeParse(body);
     if (!validated.success) {
       throw new BadRequestException(validated.error.errors);
     }
 
+    const serviceData = ToggleMonitorServiceSchema.parse({
+      ...validated.data,
+      userId: user.id,
+    });
+
     try {
-      return await this.currenciesService.enableMonitoredPair(validated.data);
+      return await this.currenciesService.enableMonitoredPair(serviceData);
     } catch (error) {
       if (error instanceof PairNotFoundError) {
         throw new NotFoundException(error.message);
@@ -144,6 +176,30 @@ export class CurrenciesController {
       throw new InternalServerErrorException('Failed to fetch rates');
     }
   }
+
+  // @Get('rates')
+  // async getRates(@Query() query: unknown) {
+  //   const validated = RateQuerySchema.safeParse(query);
+  //   if (!validated.success) {
+  //     throw new BadRequestException(validated.error.errors);
+  //   }
+
+  //   if (validated.data.from === validated.data.to) {
+  //     throw new BadRequestException('From and to currencies must be different');
+  //   }
+
+  //   try {
+  //     return await this.currenciesService.getRates(
+  //       validated.data.from,
+  //       validated.data.to,
+  //     );
+  //   } catch (error) {
+  //     if (error instanceof InvalidCurrencyDataError) {
+  //       throw new BadRequestException(error.message);
+  //     }
+  //     throw new InternalServerErrorException('Failed to fetch rates');
+  //   }
+  // }
 
   @Get(':id')
   findById(@Param('id') id: string): string {

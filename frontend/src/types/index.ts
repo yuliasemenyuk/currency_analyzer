@@ -33,7 +33,7 @@ export const AddRuleWithCurrencyCodesSchema = z.object({
   toCurrencyCode: z.string(),
   percentage: z.number().positive(),
   trendDirection: z.enum(["increase", "decrease"]),
-  userId: z.string(),
+  // userId: z.string(),
 });
 
 export type TrendDirection = z.infer<typeof TrendDirectionSchema>;

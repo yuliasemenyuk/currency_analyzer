@@ -1,6 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
-import { ActiveRuleSchema, AddRuleWithCurrencyCodesDto } from './rules.schema';
+import {
+  ActiveRuleSchema,
+  AddRuleWithCurrencyCodesDto,
+  // RuleListResponse,
+  // RuleListSchema,
+  CreateRuleServiceDto,
+  RuleToggleServiceDto,
+  RuleArchiveServiceDto,
+} from './rules.schema';
 import {
   InvalidRuleDataError,
   MaxRulesReachedError,
@@ -131,7 +139,7 @@ export class RulesService {
     }
   }
 
-  async handleUserRuleCreation(data: AddRuleWithCurrencyCodesDto) {
+  async handleUserRuleCreation(data: CreateRuleServiceDto) {
     try {
       const {
         userId,
@@ -143,17 +151,6 @@ export class RulesService {
 
       if (fromCurrencyCode === toCurrencyCode) {
         throw new SameCurrencyRuleError(fromCurrencyCode);
-      }
-
-      const existingRulesCount = await this.prisma.rule.count({
-        where: {
-          users: { some: { userId, isArchived: false } },
-          trendDirection,
-        },
-      });
-
-      if (existingRulesCount >= 5) {
-        throw new MaxRulesReachedError(userId, trendDirection);
       }
 
       const existingRule = await this.findRuleByCurrencies({
@@ -175,17 +172,24 @@ export class RulesService {
 
         if (existingSubscription) {
           throw new RuleAlreadySubscribedError();
-          // userId, existingRule.id);
         }
       }
 
       let newRule;
       if (existingRule) {
-        await this.handleRuleSubscription(userId, existingRule.id, true);
+        await this.handleRuleSubscription({
+          userId,
+          ruleId: existingRule.id,
+          isEnabled: true,
+        });
         newRule = existingRule;
       } else {
         newRule = await this.createRule(data);
-        await this.handleRuleSubscription(userId, newRule.id, true);
+        await this.handleRuleSubscription({
+          userId,
+          ruleId: newRule.id,
+          isEnabled: true,
+        });
       }
 
       return newRule;
@@ -202,49 +206,54 @@ export class RulesService {
     }
   }
 
-  async handleRuleSubscription(
-    userId: string,
-    ruleId: string,
-    isEnabled: boolean,
-  ) {
+  async handleRuleSubscription(data: RuleToggleServiceDto) {
     try {
       return await this.prisma.usersOnRules.upsert({
         where: {
-          userId_ruleId: { userId, ruleId },
+          userId_ruleId: {
+            userId: data.userId,
+            ruleId: data.ruleId,
+          },
         },
-        update: { isEnabled },
+        update: {
+          isEnabled: data.isEnabled,
+        },
         create: {
-          user: { connect: { id: userId } },
-          rule: { connect: { id: ruleId } },
-          isEnabled,
+          user: { connect: { id: data.userId } },
+          rule: { connect: { id: data.ruleId } },
+          isEnabled: data.isEnabled,
         },
       });
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      throw new RuleSubscriptionError(userId, ruleId);
+      throw new RuleSubscriptionError(data.userId, data.ruleId);
     }
   }
 
-  async removeRule(ruleId: string, userId: string) {
+  async removeRule(data: RuleArchiveServiceDto) {
     try {
       const rule = await this.prisma.usersOnRules.update({
         where: {
           userId_ruleId: {
-            userId,
-            ruleId,
+            userId: data.userId,
+            ruleId: data.ruleId,
           },
         },
-        data: { isArchived: true, isEnabled: false },
+        data: {
+          isArchived: true,
+          isEnabled: false,
+        },
       });
 
       return rule;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      throw new RuleNotFoundError(ruleId);
+      throw new RuleNotFoundError(data.ruleId);
     }
   }
 
-  async restoreRule(ruleId: string, userId: string) {
+  async restoreRule(data: RuleArchiveServiceDto) {
+    const { userId, ruleId } = data;
     try {
       const existingRulesCount = await this.prisma.rule.count({
         where: {

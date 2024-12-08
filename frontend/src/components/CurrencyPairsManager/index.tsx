@@ -12,13 +12,13 @@ export function CurrencyPairsManager() {
 
   useEffect(() => {
     getCurrencies().then(({ data }) => setCurrencies(data));
-    getMonitoredPairs('040dff52-8aa1-41a6-bc2f-d578170df96c').then(({ data }) => setMonitoredPairs(data));
+    getMonitoredPairs().then(({ data }) => setMonitoredPairs(data));
   }, []);
 
   const addMonitoredPair = async (from: string, to: string) => {
     try {
-      await startMonitoringPair({ userId: '040dff52-8aa1-41a6-bc2f-d578170df96c', fromCode: from, toCode: to });
-      const { data } = await getMonitoredPairs('040dff52-8aa1-41a6-bc2f-d578170df96c');
+      await startMonitoringPair({ fromCode: from, toCode: to });
+      const { data } = await getMonitoredPairs();
       setMonitoredPairs(data);
     } catch (err) {
       toast.error('Failed to add monitored pair');
@@ -27,13 +27,14 @@ export function CurrencyPairsManager() {
   };
 
   const toggleMonitoredPair = async (pairId: string, isEnabled: boolean) => {
+    console.log(isEnabled, "isEnabled");
     try {
       if (isEnabled) {
-        await disableMonitoredPair({ userId: '040dff52-8aa1-41a6-bc2f-d578170df96c', pairId });
+        await disableMonitoredPair({ pairId });
       } else {
-        await enableMonitoredPair({ userId: '040dff52-8aa1-41a6-bc2f-d578170df96c', pairId });
+        await enableMonitoredPair({ pairId });
       }
-      const { data } = await getMonitoredPairs('040dff52-8aa1-41a6-bc2f-d578170df96c');
+      const { data } = await getMonitoredPairs();
       setMonitoredPairs(data);
     } catch (err) {
       toast.error('Failed to change status of monitored pair');

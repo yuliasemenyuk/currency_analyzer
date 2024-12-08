@@ -11,6 +11,7 @@ export function MonitoredPairsList({
   toggleMonitoredPair,
 }: MonitoredPairsListProps) {
   const handleToggle = async (pairId: string, isEnabled: boolean) => {
+    console.log(pairId, isEnabled);
     await toggleMonitoredPair(pairId, isEnabled);
   };
 

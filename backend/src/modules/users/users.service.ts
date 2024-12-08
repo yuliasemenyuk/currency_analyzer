@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateUserDto } from './users.schema';
 import { DuplicateUserError, UserNotFoundError } from './users.errors';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -34,9 +35,12 @@ export class UsersService {
         throw new DuplicateUserError(data.email);
       }
 
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+
       return await this.prisma.user.create({
         data: {
           email: data.email,
+          password: hashedPassword,
         },
       });
     } catch (error) {
@@ -44,6 +48,29 @@ export class UsersService {
         throw error;
       }
       throw new Error('Failed to create user');
+    }
+  }
+
+  async validateUser(email: string, password: string): Promise<any> {
+    try {
+      const user = await this.findByEmail(email);
+
+      if (!user) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+
+      return user;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new Error('Failed to validate user');
     }
   }
 }

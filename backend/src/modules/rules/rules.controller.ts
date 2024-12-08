@@ -4,9 +4,10 @@ import {
   Body,
   Patch,
   Param,
-  Query,
+  // Query,
   Get,
   Delete,
+  UseGuards,
   BadRequestException,
   InternalServerErrorException,
   ConflictException,
@@ -14,8 +15,12 @@ import {
 } from '@nestjs/common';
 import { RulesService } from './rules.service';
 import {
-  AddRuleWithCurrencyCodesSchema,
-  ToggleRuleSubscriptionSchema,
+  CreateRuleRequestSchema,
+  RuleToggleRequestSchema,
+  CreateRuleServiceSchema,
+  RuleToggleServiceSchema,
+  RuleArchiveServiceSchema,
+  // RuleListResponse,
 } from './rules.schema';
 import {
   MaxRulesReachedError,
@@ -24,36 +29,40 @@ import {
   RuleNotFoundError,
   RuleAlreadySubscribedError,
 } from './rules.errors';
-import { z } from 'zod';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { User } from '../../common/decorators/user.decorator';
+// import { z } from 'zod';
 
 @Controller('rules')
 export class RulesController {
   constructor(private readonly rulesService: RulesService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Get()
-  async getUsersRules(@Query('userId') userId: unknown) {
-    const validated = z.string().uuid().safeParse(userId);
-    if (!validated.success) {
-      throw new BadRequestException('Invalid user id format');
-    }
-
+  async getUsersRules(@User() user): Promise<any> {
     try {
-      return await this.rulesService.getAllUsersRules(validated.data);
+      return await this.rulesService.getAllUsersRules(user.id);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       throw new InternalServerErrorException('Failed to fetch rules');
     }
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post()
-  async addRule(@Body() body: unknown) {
-    const validated = AddRuleWithCurrencyCodesSchema.safeParse(body);
+  async addRule(@User() user, @Body() body: unknown) {
+    const validated = CreateRuleRequestSchema.safeParse(body);
     if (!validated.success) {
       throw new BadRequestException(validated.error.errors);
     }
 
+    const serviceData = CreateRuleServiceSchema.parse({
+      ...validated.data,
+      userId: user.id,
+    });
+
     try {
-      return await this.rulesService.handleUserRuleCreation(validated.data);
+      return await this.rulesService.handleUserRuleCreation(serviceData);
     } catch (error) {
       if (
         error instanceof MaxRulesReachedError ||
@@ -66,29 +75,27 @@ export class RulesController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch(':ruleId/toggle')
   async toggleSubscription(
+    @User() user,
     @Param('ruleId') ruleId: string,
     @Body() body: unknown,
   ) {
-    const validatedRuleId = z.string().uuid().safeParse(ruleId);
-
-    if (!validatedRuleId.success) {
-      throw new BadRequestException('Invalid rule id format');
-    }
-
-    const validated = ToggleRuleSubscriptionSchema.safeParse(body);
+    const validated = RuleToggleRequestSchema.safeParse(body);
     if (!validated.success) {
       throw new BadRequestException(validated.error.errors);
     }
 
+    const serviceData = RuleToggleServiceSchema.parse({
+      ...validated.data,
+      userId: user.id,
+      ruleId,
+    });
+
     try {
-      await this.rulesService.handleRuleSubscription(
-        validated.data.userId,
-        validatedRuleId.data,
-        validated.data.isEnabled,
-      );
-      return { message: 'Subscription status changed succesfullly' };
+      await this.rulesService.handleRuleSubscription(serviceData);
+      return { message: 'Subscription status changed successfully' };
     } catch (error) {
       if (error instanceof RuleSubscriptionError) {
         throw new ConflictException(error.message);
@@ -102,22 +109,20 @@ export class RulesController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':ruleId')
-  async removeRule(
-    @Param('ruleId') ruleId: string,
-    @Query('userId') userId: string,
-  ) {
-    const validatedRuleId = z.string().uuid().safeParse(ruleId);
-    const validatedUserId = z.string().uuid().safeParse(userId);
-    if (!validatedRuleId.success || !validatedUserId.success) {
-      throw new BadRequestException('Invalid rule id or user id format');
+  async removeRule(@User() user, @Param('ruleId') ruleId: string) {
+    const serviceData = RuleArchiveServiceSchema.safeParse({
+      userId: user.id,
+      ruleId,
+    });
+
+    if (!serviceData.success) {
+      throw new BadRequestException('Invalid rule data');
     }
 
     try {
-      await this.rulesService.removeRule(
-        validatedRuleId.data,
-        validatedUserId.data,
-      );
+      await this.rulesService.removeRule(serviceData.data);
       return { message: 'Rule archived successfully' };
     } catch (error) {
       if (error instanceof RuleNotFoundError) {
@@ -127,18 +132,20 @@ export class RulesController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch(':ruleId/restore')
-  async restoreRule(
-    @Param('ruleId') ruleId: string,
-    @Body() body: { userId: string },
-  ) {
-    const validatedRuleId = z.string().uuid().safeParse(ruleId);
-    if (!validatedRuleId.success) {
-      throw new BadRequestException('Invalid rule id format');
+  async restoreRule(@User() user, @Param('ruleId') ruleId: string) {
+    const serviceData = RuleArchiveServiceSchema.safeParse({
+      userId: user.id,
+      ruleId,
+    });
+
+    if (!serviceData.success) {
+      throw new BadRequestException('Invalid rule data');
     }
 
     try {
-      await this.rulesService.restoreRule(validatedRuleId.data, body.userId);
+      await this.rulesService.restoreRule(serviceData.data);
       return { message: 'Rule restored successfully' };
     } catch (error) {
       if (error instanceof RuleNotFoundError) {
@@ -151,10 +158,12 @@ export class RulesController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('archived')
-  async getArchivedRules(@Query('userId') userId: string) {
+  async getArchivedRules(@User() user) {
+    // : Promise<RuleListResponse[]>
     try {
-      return await this.rulesService.getArchivedRules(userId);
+      return await this.rulesService.getArchivedRules(user.id);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       throw new InternalServerErrorException('Failed to fetch archived rules');
