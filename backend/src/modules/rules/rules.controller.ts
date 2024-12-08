@@ -144,6 +144,9 @@ export class RulesController {
       if (error instanceof RuleNotFoundError) {
         throw new NotFoundException(error.message);
       }
+      if (error instanceof MaxRulesReachedError) {
+        throw new ConflictException(error.message);
+      }
       throw new InternalServerErrorException('Failed to restore rule');
     }
   }

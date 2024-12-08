@@ -147,7 +147,7 @@ export class RulesService {
 
       const existingRulesCount = await this.prisma.rule.count({
         where: {
-          users: { some: { userId } },
+          users: { some: { userId, isArchived: false } },
           trendDirection,
         },
       });
@@ -246,6 +246,30 @@ export class RulesService {
 
   async restoreRule(ruleId: string, userId: string) {
     try {
+      const existingRulesCount = await this.prisma.rule.count({
+        where: {
+          users: { some: { userId, isArchived: false } },
+          trendDirection: (
+            await this.prisma.rule.findUnique({
+              where: { id: ruleId },
+              select: { trendDirection: true },
+            })
+          )?.trendDirection,
+        },
+      });
+
+      if (existingRulesCount >= 5) {
+        throw new MaxRulesReachedError(
+          userId,
+          (
+            await this.prisma.rule.findUnique({
+              where: { id: ruleId },
+              select: { trendDirection: true },
+            })
+          )?.trendDirection,
+        );
+      }
+
       const rule = await this.prisma.usersOnRules.update({
         where: {
           userId_ruleId: {
@@ -257,11 +281,14 @@ export class RulesService {
       });
 
       return rule;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      throw new RuleNotFoundError(ruleId);
+      if (error instanceof MaxRulesReachedError) {
+        throw error;
+      }
+      throw new Error('Failed to restore rule');
     }
   }
+
   async getAllActiveRules() {
     try {
       const activeRules = await this.prisma.rule.findMany({
