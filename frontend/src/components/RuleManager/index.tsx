@@ -6,6 +6,7 @@ import { MonitoredPairsList } from "../MonitoredPairsList";
 import { RulesList } from "../RulesList";
 import { RuleConfigurator } from "../RuleConfigurator";
 import { createRule, getUsersRules, toggleRuleSubscription, removeRule } from "../../services/api";
+import { toast } from 'react-toastify';
 import {z} from 'zod';
 import "./styles.css";
 
@@ -18,19 +19,34 @@ export function RulesManager() {
   const [editedRule, setEditedRule] = useState<Partial<Rule>>({});
 
   const fetchCurrencies = async () => {
-    const { data } = await getCurrencies();
-    setCurrencies(data);
+    try {
+      const { data } = await getCurrencies();
+      setCurrencies(data);
+    } catch (err) {
+      toast.error('Failed to fetch currencies');
+      console.error(err);
+    }
   };
 
   const fetchMonitoredPairs = async () => {
-    const { data } = await getMonitoredPairs(userId);
-    setMonitoredPairs(data);
+    try {
+      const { data } = await getMonitoredPairs(userId);
+      setMonitoredPairs(data);
+    } catch (err) {
+      toast.error('Failed to fetch monitored pairs');
+      console.error(err);
+    }
   };
 
   const fetchRules = async () => {
-    const { data } = await getUsersRules(userId);
-    const validatedRules = z.array(RuleSchema).parse(data);
-    setRules(validatedRules);
+    try {
+      const { data } = await getUsersRules(userId);
+      const validatedRules = z.array(RuleSchema).parse(data);
+      setRules(validatedRules);
+    } catch (err) {
+      toast.error('Failed to fetch rules');
+      console.error(err);
+    }
   };
 
   useEffect(() => {
@@ -43,7 +59,9 @@ export function RulesManager() {
     try {
       await startMonitoringPair({ userId, fromCode: from, toCode: to });
       await fetchMonitoredPairs();
+      toast.success('Monitored pair added successfully');
     } catch (err) {
+      toast.error('Failed to add monitored pair');
       console.error(err);
     }
   };
@@ -57,13 +75,19 @@ export function RulesManager() {
       }
       await fetchMonitoredPairs();
     } catch (err) {
+      toast.error('Failed to update monitored pair status');
       console.error(err);
     }
   };
 
   const handleToggle = async (rule: Rule) => {
+    try {
       await toggleRuleSubscription(rule.id, { isEnabled: !rule.isEnabled });
-    await fetchRules();
+      await fetchRules();
+    } catch (err) {
+      toast.error('Failed to update rule subscription status');
+      console.error(err);
+    }
   };
 
   const handleEdit = (rule: Partial<Rule>) => {
@@ -73,16 +97,23 @@ export function RulesManager() {
 
   const handleSave = async (ruleId: string) => {
     if (editedRule && editedRule.percentage && editedRule.trendDirection && editedRule.currencyPair) {
-      await createRule({
-        userId,
-        fromCurrencyCode: editedRule.currencyPair.fromCode,
-        toCurrencyCode: editedRule.currencyPair.toCode,
-        percentage: editedRule.percentage,
-        trendDirection: editedRule.trendDirection,
-      });
-      await removeRule(ruleId, userId);
-      await fetchRules();
-      setEditMode({ ...editMode, [ruleId]: false });
+      try {
+        await createRule({
+          userId,
+          fromCurrencyCode: editedRule.currencyPair.fromCode,
+          toCurrencyCode: editedRule.currencyPair.toCode,
+          percentage: editedRule.percentage,
+          trendDirection: editedRule.trendDirection,
+        });
+        await removeRule(ruleId, userId);
+        await fetchRules();
+        setEditMode({ ...editMode, [ruleId]: false });
+        toast.success('Rule updated successfully');
+      } catch (err) {
+        const error = err as { response: { data: { message: string } } };
+        toast.error(error.response.data.message || "Failed to add rule");
+        console.error(err);
+      }
     }
   };
 

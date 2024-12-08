@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Currency, CurrencyPair } from "../../types";
+import { toast } from 'react-toastify';
 import './styles.css';
 
 interface CurrencyPairsConfiguratorProps {
@@ -24,12 +25,18 @@ export function CurrencyPairsConfigurator({
     e.preventDefault();
     const pairExists = monitoredPairs.some(pair => pair.fromCode === from && pair.toCode === to);
     if (pairExists) {
-      alert("This currency pair is already being monitored.");
+      toast.info("This currency pair is already being monitored.");
       return;
     }
-    await addMonitoredPair(from, to);
-    setFrom("");
-    setTo("");
+    try {
+      await addMonitoredPair(from, to);
+      setFrom("");
+      setTo("");
+    } catch (err) {
+      const error = err as { response: { data: { message: string } } };
+      toast.error(error.response.data.message || "Failed to add currency pair.");
+      console.error(err);
+    }
   };
 
   return (

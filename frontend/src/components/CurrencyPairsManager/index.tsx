@@ -3,6 +3,7 @@ import { Currency, CurrencyPair } from "../../types";
 import { getCurrencies, getMonitoredPairs, startMonitoringPair, disableMonitoredPair, enableMonitoredPair } from "../../services/api";
 import { CurrencyPairsConfigurator } from "../CurrencyPairsConfigurator";
 import { MonitoredPairsList } from "../MonitoredPairsList";
+import {toast} from 'react-toastify';
 import './styles.css';
 
 export function CurrencyPairsManager() {
@@ -20,6 +21,7 @@ export function CurrencyPairsManager() {
       const { data } = await getMonitoredPairs('040dff52-8aa1-41a6-bc2f-d578170df96c');
       setMonitoredPairs(data);
     } catch (err) {
+      toast.error('Failed to add monitored pair');
       console.error(err);
     }
   };
@@ -34,6 +36,7 @@ export function CurrencyPairsManager() {
       const { data } = await getMonitoredPairs('040dff52-8aa1-41a6-bc2f-d578170df96c');
       setMonitoredPairs(data);
     } catch (err) {
+      toast.error('Failed to change status of monitored pair');
       console.error(err);
     }
   };
