@@ -33,6 +33,11 @@ export const ActiveRuleSchema = z.object({
   ),
 });
 
+export const ToggleRuleSubscriptionSchema = z.object({
+  userId: z.string().uuid(),
+  isEnabled: z.boolean(),
+});
+
 export type AddRuleWithCurrencyCodesDto = z.infer<
   typeof AddRuleWithCurrencyCodesSchema
 >;

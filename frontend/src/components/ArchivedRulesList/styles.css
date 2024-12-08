@@ -1,0 +1,59 @@
+.rules-list,
+.archived-rules-list {
+  margin: 20px 0;
+}
+
+.rule-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.rule-info {
+  display: flex;
+  align-items: center;
+}
+
+.rule-info span {
+  margin-right: 10px;
+}
+
+.rule-info input,
+.rule-info select {
+  margin-right: 10px;
+}
+
+.rule-actions button {
+  margin-left: 10px;
+}
+
+.toggle-archived {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.toggle-archived span {
+  margin-left: 5px;
+}
+
+.restore-button {
+  background-color: #4caf50;
+  color: white;
+  margin-left: 10px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  min-width: 80px;
+  text-align: center;
+}
+
+.restore-button:hover {
+  background-color: #45a049;
+}

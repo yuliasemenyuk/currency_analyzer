@@ -14,5 +14,7 @@ export const enableMonitoredPair = (data: {userId: string, pairId: string}) => a
 export const createRule = (data: AddRuleWithCurrencyCodesDto) => api.post('/rules', data);
 export const getUsersRules = (userId: string) => api.get(`/rules?userId=${userId}`);
 // export const updateRule = (id: string, data: Partial<AddRuleWithCurrencyCodesDto>) => api.put(`/rules/${id}`, data);
-export const toggleRuleSubscription = (ruleId: string, p0: { isEnabled: boolean; }) => api.patch(`/rules/${ruleId}/toggle?userId=040dff52-8aa1-41a6-bc2f-d578170df96c`);
+export const toggleRuleSubscription = (ruleId: string, data: {isEnabled: boolean, userId: string}) => api.patch(`/rules/${ruleId}/toggle`, data);
 export const removeRule = (ruleId: string, userId: string) => api.delete(`/rules/${ruleId}?userId=${userId}`);
+export const restoreRule = (ruleId: string, userId: string) => api.patch(`/rules/${ruleId}/restore`, { userId });
+export const getArchivedRules = (userId: string) => api.get(`/rules/archived?userId=${userId}`);

@@ -5,7 +5,8 @@ import { CurrencyPairsConfigurator } from "../CurrencyPairsConfigurator";
 import { MonitoredPairsList } from "../MonitoredPairsList";
 import { RulesList } from "../RulesList";
 import { RuleConfigurator } from "../RuleConfigurator";
-import { createRule, getUsersRules, toggleRuleSubscription, removeRule } from "../../services/api";
+import { ArchivedRulesList } from "../ArchivedRulesList";
+import { createRule, getUsersRules, toggleRuleSubscription, removeRule, getArchivedRules, restoreRule } from "../../services/api";
 import { toast } from 'react-toastify';
 import {z} from 'zod';
 import "./styles.css";
@@ -15,8 +16,10 @@ export function RulesManager() {
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [monitoredPairs, setMonitoredPairs] = useState<CurrencyPair[]>([]);
   const [rules, setRules] = useState<Rule[]>([]);
+  const [archivedRules, setArchivedRules] = useState<Rule[]>([]);
   const [editMode, setEditMode] = useState<{ [key: string]: boolean }>({});
   const [editedRule, setEditedRule] = useState<Partial<Rule>>({});
+  const [showArchived, setShowArchived] = useState(false);
 
   const fetchCurrencies = async () => {
     try {
@@ -49,10 +52,22 @@ export function RulesManager() {
     }
   };
 
+  const fetchArchivedRules = async () => {
+    try {
+      const { data } = await getArchivedRules(userId);
+      const validatedRules = z.array(RuleSchema).parse(data);
+      setArchivedRules(validatedRules);
+    } catch (err) {
+      toast.error('Failed to fetch archived rules');
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     fetchCurrencies();
     fetchMonitoredPairs();
     fetchRules();
+    fetchArchivedRules();
   }, [userId]);
 
   const addMonitoredPair = async (from: string, to: string) => {
@@ -82,7 +97,7 @@ export function RulesManager() {
 
   const handleToggle = async (rule: Rule) => {
     try {
-      await toggleRuleSubscription(rule.id, { isEnabled: !rule.isEnabled });
+      await toggleRuleSubscription(rule.id, { userId, isEnabled: !rule.isEnabled });
       await fetchRules();
     } catch (err) {
       toast.error('Failed to update rule subscription status');
@@ -117,6 +132,30 @@ export function RulesManager() {
     }
   };
 
+  const handleDelete = async (ruleId: string) => {
+    try {
+      await removeRule(ruleId, userId);
+      await fetchRules();
+      await fetchArchivedRules();
+      toast.success('Rule deleted successfully');
+    } catch (err) {
+      toast.error('Failed to delete rule');
+      console.error(err);
+    }
+  };
+
+  const handleRestore = async (ruleId: string) => {
+    try {
+      await restoreRule(ruleId, userId);
+      await fetchRules();
+      await fetchArchivedRules();
+      toast.success('Rule restored successfully');
+    } catch (err) {
+      toast.error('Failed to restore rule');
+      console.error(err);
+    }
+  };
+
   return (
     <div className="rules-manager">
       <CurrencyPairsConfigurator
@@ -139,7 +178,22 @@ export function RulesManager() {
         onToggle={handleToggle}
         onEdit={handleEdit}
         onSave={handleSave}
+        onDelete={handleDelete}
+        onCancel={(ruleId) => setEditMode({ ...editMode, [ruleId]: false })}
       />
+      <div className="toggle-archived" onClick={() => setShowArchived(!showArchived)}>
+        <span>Archived Rules</span>
+        <span>{showArchived ? '▲' : '▼'}</span>
+      </div>
+      {showArchived && (
+        <ArchivedRulesList
+          archivedRules={archivedRules}
+          onRestore={handleRestore}
+        />
+      )}
+      {showArchived && archivedRules.length === 0 && (
+        <div className="no-archived-rules">No archived rules</div>
+      )}
     </div>
   );
 }

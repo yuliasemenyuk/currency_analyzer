@@ -55,7 +55,7 @@ model Rule {
 model User {
   id          String          @id @default(uuid())
   email       String          @unique
-  password    String
+  // password    String
   pairs       UsersOnPairs[]
   rules       UsersOnRules[]
 }
@@ -75,5 +75,6 @@ model UsersOnRules {
   rule     Rule   @relation(fields: [ruleId], references: [id], onDelete: Cascade)
   ruleId   String
   isEnabled Boolean @default(false)
+  isArchived Boolean @default(false)
   @@id([userId, ruleId])
 }

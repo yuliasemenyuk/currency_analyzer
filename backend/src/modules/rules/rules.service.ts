@@ -19,7 +19,12 @@ export class RulesService {
     try {
       const userRules = await this.prisma.rule.findMany({
         where: {
-          users: { some: { userId } },
+          users: {
+            some: {
+              userId,
+              isArchived: false,
+            },
+          },
         },
         include: {
           currencyPair: true,
@@ -30,18 +35,12 @@ export class RulesService {
         },
       });
 
-      if (!userRules.length) {
-        throw new RuleNotFoundError('No rules found for user');
-      }
-
       return userRules.map((rule) => ({
         ...rule,
         isEnabled: rule.users[0]?.isEnabled ?? false,
       }));
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      if (error instanceof RuleNotFoundError) {
-        throw error;
-      }
       throw new Error('Failed to fetch user rules');
     }
   }
@@ -228,23 +227,54 @@ export class RulesService {
 
   async removeRule(ruleId: string, userId: string) {
     try {
-      await this.prisma.usersOnRules.delete({
+      const rule = await this.prisma.usersOnRules.update({
         where: {
-          userId_ruleId: { userId, ruleId },
+          userId_ruleId: {
+            userId,
+            ruleId,
+          },
         },
+        data: { isArchived: true, isEnabled: false },
       });
+
+      return rule;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       throw new RuleNotFoundError(ruleId);
     }
   }
 
+  async restoreRule(ruleId: string, userId: string) {
+    try {
+      const rule = await this.prisma.usersOnRules.update({
+        where: {
+          userId_ruleId: {
+            userId,
+            ruleId,
+          },
+        },
+        data: { isArchived: false, isEnabled: true },
+      });
+
+      return rule;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      throw new RuleNotFoundError(ruleId);
+    }
+  }
   async getAllActiveRules() {
     try {
       const activeRules = await this.prisma.rule.findMany({
-        where: { isEnabled: true },
+        where: {
+          isEnabled: true,
+          users: {
+            some: {
+              isArchived: false,
+            },
+          },
+        },
         include: {
-          users: { include: { user: true } },
+          users: true,
           currencyPair: true,
         },
       });
@@ -262,6 +292,31 @@ export class RulesService {
         throw error;
       }
       throw new Error('Failed to fetch active rules');
+    }
+  }
+
+  async getArchivedRules(userId: string) {
+    try {
+      const archivedRules = await this.prisma.rule.findMany({
+        where: {
+          users: { some: { userId, isArchived: true } },
+        },
+        include: {
+          currencyPair: true,
+          users: {
+            where: { userId },
+            select: { isEnabled: true },
+          },
+        },
+      });
+
+      return archivedRules.map((rule) => ({
+        ...rule,
+        isEnabled: rule.users[0]?.isEnabled ?? false,
+      }));
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      throw new Error('Failed to fetch archived rules');
     }
   }
 }

@@ -8,6 +8,8 @@ interface RulesListProps {
   onToggle: (rule: Rule) => Promise<void>;
   onEdit: (rule: Partial<Rule>) => void;
   onSave: (ruleId: string) => Promise<void>;
+  onDelete: (ruleId: string) => Promise<void>;
+  onCancel: (ruleId: string) => void;
 }
 
 export function RulesList({
@@ -17,6 +19,8 @@ export function RulesList({
   onToggle,
   onEdit,
   onSave,
+  onDelete,
+  onCancel,
 }: RulesListProps) {
   return (
     <div className="rules-list">
@@ -32,45 +36,82 @@ export function RulesList({
                   type="number"
                   value={editedRule.percentage ?? rule.percentage}
                   onChange={(e) =>
-                    onEdit({ ...editedRule, percentage: Number(e.target.value), id: rule.id, currencyPair: rule.currencyPair, trendDirection: rule.trendDirection, isEnabled: rule.isEnabled })
+                    onEdit({
+                      ...editedRule,
+                      percentage: Number(e.target.value),
+                      id: rule.id,
+                      currencyPair: rule.currencyPair,
+                      trendDirection: rule.trendDirection,
+                      isEnabled: rule.isEnabled,
+                    })
                   }
                 />
                 <select
                   value={editedRule.trendDirection ?? rule.trendDirection}
                   onChange={(e) =>
-                    onEdit({ ...editedRule, trendDirection: e.target.value as 'increase' | 'decrease', id: rule.id, currencyPair: rule.currencyPair, percentage: rule.percentage, isEnabled: rule.isEnabled })
+                    onEdit({
+                      ...editedRule,
+                      trendDirection: e.target.value as 'increase' | 'decrease',
+                      id: rule.id,
+                      currencyPair: rule.currencyPair,
+                      percentage: rule.percentage,
+                      isEnabled: rule.isEnabled,
+                    })
                   }
                 >
                   <option value="increase">Increase</option>
                   <option value="decrease">Decrease</option>
                 </select>
+                <div className="rule-actions">
+                  <button
+                    className="save-button"
+                    onClick={() => onSave(rule.id)}
+                  >
+                    Save
+                  </button>
+                  <button
+                    className="cancel-button"
+                    onClick={() => onCancel(rule.id)}
+                  >
+                    Cancel
+                  </button>
+                </div>
               </>
             ) : (
-              <span>
-                {rule.percentage}% {rule.trendDirection}
-              </span>
-            )}
-          </div>
-          <div className="rule-actions">
-            <button
-              className={`toggle-button ${
-                rule.isEnabled ? "enabled" : "disabled"
-              }`}
-              onClick={() => onToggle(rule)}
-            >
-              {rule.isEnabled ? "Disable" : "Enable"}
-            </button>
-            {editMode[rule.id] ? (
-              <button className="save-button" onClick={() => onSave(rule.id)}>Save</button>
-            ) : (
-              <button className="edit-button" onClick={() => onEdit(rule)}>Edit</button>
+              <>
+                <span>{rule.percentage}%</span>
+                <span>{rule.trendDirection}</span>
+                <span
+                  className={`rule-status ${
+                    rule.isEnabled ? 'active' : 'inactive'
+                  }`}
+                >
+                  {rule.isEnabled ? 'Active' : 'Disabled'}
+                </span>
+                <div className="rule-actions">
+                  <button
+                    className={
+                      rule.isEnabled ? 'disable-button' : 'enable-button'
+                    }
+                    onClick={() => onToggle(rule)}
+                  >
+                    {rule.isEnabled ? 'Disable' : 'Enable'}
+                  </button>
+                  <button className="edit-button" onClick={() => onEdit(rule)}>
+                    Edit
+                  </button>
+                  <button
+                    className="delete-button"
+                    onClick={() => onDelete(rule.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </div>
       ))}
-      {rules.length === 0 && (
-        <div className="no-rules">No rules yet</div>
-      )}
     </div>
   );
 }

@@ -1,0 +1,20 @@
+.rules-manager {
+    margin: 20px;
+  }
+  
+  .toggle-archived {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    margin-top: 20px;
+  }
+  
+  .toggle-archived span {
+    margin-left: 5px;
+  }
+  
+  .no-archived-rules {
+    margin-top: 10px;
+    color: #6b7280;
+    font-size: 14px;
+  }
