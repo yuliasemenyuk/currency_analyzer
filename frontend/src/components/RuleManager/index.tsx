@@ -149,7 +149,8 @@ export function RulesManager() {
       await fetchArchivedRules();
       toast.success('Rule restored successfully');
     } catch (err) {
-      toast.error('Failed to restore rule');
+      const error = err as { response: { data: { message: string } } };
+      toast.error(error.response.data.message);
       console.error(err);
     }
   };

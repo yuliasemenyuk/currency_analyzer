@@ -12,7 +12,7 @@ import {
 import {
   InvalidRuleDataError,
   MaxRulesReachedError,
-  RuleNotFoundError,
+  // RuleNotFoundError,
   RuleSubscriptionError,
   SameCurrencyRuleError,
   PairNotFoundError,
@@ -207,7 +207,31 @@ export class RulesService {
   }
 
   async handleRuleSubscription(data: RuleToggleServiceDto) {
+    const { userId, ruleId } = data;
     try {
+      const existingRulesCount = await this.prisma.rule.count({
+        where: {
+          users: { some: { userId, isArchived: false } },
+          trendDirection: (
+            await this.prisma.rule.findUnique({
+              where: { id: ruleId },
+              select: { trendDirection: true },
+            })
+          )?.trendDirection,
+        },
+      });
+
+      if (existingRulesCount >= 5) {
+        throw new MaxRulesReachedError(
+          userId,
+          (
+            await this.prisma.rule.findUnique({
+              where: { id: ruleId },
+              select: { trendDirection: true },
+            })
+          )?.trendDirection,
+        );
+      }
       return await this.prisma.usersOnRules.upsert({
         where: {
           userId_ruleId: {
@@ -226,17 +250,21 @@ export class RulesService {
       });
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
+      if (error instanceof MaxRulesReachedError) {
+        throw error;
+      }
       throw new RuleSubscriptionError(data.userId, data.ruleId);
     }
   }
 
   async removeRule(data: RuleArchiveServiceDto) {
+    const { userId, ruleId } = data;
     try {
       const rule = await this.prisma.usersOnRules.update({
         where: {
           userId_ruleId: {
-            userId: data.userId,
-            ruleId: data.ruleId,
+            userId: userId,
+            ruleId: ruleId,
           },
         },
         data: {
@@ -248,7 +276,10 @@ export class RulesService {
       return rule;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      throw new RuleNotFoundError(data.ruleId);
+      // if (error instanceof MaxRulesReachedError) {
+      //   throw error;
+      // }
+      throw new Error('Failed to archive rule');
     }
   }
 
