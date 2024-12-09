@@ -77,14 +77,30 @@ export const RuleResponseSchema = RuleBaseSchema.extend({
   isArchived: z.boolean(),
 });
 
-export const ActiveRuleSchema = RuleResponseSchema.extend({
+export const ActiveRuleSchema = z.object({
+  id: z.string().uuid(),
+  pairId: z.string().uuid(),
+  percentage: z.number().positive(),
+  trendDirection: z.enum(['increase', 'decrease']),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  isEnabled: z.boolean(),
   users: z.array(
     z.object({
+      userId: z.string().uuid(),
+      ruleId: z.string().uuid(),
+      isEnabled: z.boolean(),
+      isArchived: z.boolean(),
       user: z.object({
         email: z.string().email(),
       }),
     }),
   ),
+  currencyPair: z.object({
+    id: z.string().uuid(),
+    fromCode: z.string().length(3),
+    toCode: z.string().length(3),
+  }),
 });
 
 export const RuleListSchema = z.object({

@@ -2,33 +2,45 @@ version: '3.8'
 
 services:
   admin_service:
-    build: ./backend/admin_service  # Вказує папку, в якій знаходиться Dockerfile
+    build: ./backend  # Вказує папку, в якій знаходиться Dockerfile
+    command: 
+     - dist/src/main
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=pg
+      - REDIS_HOST=redis
     ports:
       - "3000:3000"  # Порт, на якому буде доступний сервіс
-    depends_on:
+    links:
       - pg           # Залежить від сервісу бази даних
       - redis        # Залежить від Redis
 
   collector_service:
-    build: ./backend/collector_service  # Вказує папку, в якій знаходиться Dockerfile
-    depends_on:
+    build: ./backend  # Вказує папку, в якій знаходиться Dockerfile
+    command: 
+     - dist/src/scheduler
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=pg
+      - REDIS_HOST=redis
+    links:
       - pg          # Залежить від сервісу бази даних
       - redis       # Залежить від Redis
 
-  frontend_service:
-    build: ./frontend_service   # Вказує папку, в якій знаходиться Dockerfile
-    ports:
-      - "3001:3001"  # Порт для фронтенду
-    depends_on:
-      - admin_service
+  # frontend_service:
+  #   build: ./frontend_service   # Вказує папку, в якій знаходиться Dockerfile
+  #   ports:
+  #     - "3001:3001"  # Порт для фронтенду
+  #   depends_on:
+  #     - admin_service
 
   pg:
     image: postgres:latest  # Використовує останню версію PostgreSQL
     restart: always
-    environment:
-      POSTGRES_DB: your_db
-      POSTGRES_USER: your_user
-      POSTGRES_PASSWORD: your_password
+    env_file:
+      - .env
     volumes:
       - db_data:/var/lib/postgresql/data  # Постійне зберігання даних бази даних
 
@@ -41,13 +53,20 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml  # Конфігураційний файл для Prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml  # Конфігураційний файл для Prometheus
+    links:
+      - admin_service
+      - collector_service
 
   grafana:
     image: grafana/grafana:latest  # Використовує останню версію Grafana
     ports:
       - "3001:3000"  # Доступ до Grafana на порту 3001
+    volumes:
+      - ./grafana/dashboards:/var/lib/grafana/dashboard
     depends_on:
+      - prometheus
+    links:
       - prometheus
 
 volumes:

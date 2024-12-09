@@ -70,6 +70,7 @@ h3 {
 .delete-button {
   background-color: #f46161;
   color: white;
+  margin-left: 10px;
 }
 
 .delete-button:hover {

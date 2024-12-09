@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
+import { InjectMetric } from '@willsoto/nestjs-prometheus';
+import { Counter, Gauge } from 'prom-client';
 import { CurrenciesService } from '../currencies/currencies.service';
 import { RulesService } from '../rules/rules.service';
 import Redis from 'ioredis';
@@ -8,22 +10,51 @@ import { PrismaService } from 'prisma/prisma.service';
 @Injectable()
 export class SchedulerService {
   private readonly logger = new Logger(SchedulerService.name);
-  private redis = new Redis();
+  private redis = new Redis(6379, process.env.REDIS_HOST);
 
   constructor(
     private readonly currenciesService: CurrenciesService,
     private readonly RulesService: RulesService,
     private prisma: PrismaService,
+    @InjectMetric('scheduler_cron_executions_total')
+    private readonly cronExecutionsCounter: Counter<string>,
+    @InjectMetric('scheduler_active_rules')
+    private readonly activeRulesGauge: Gauge<string>,
+    // @InjectMetric('currency_rate_changes')
+    // private readonly rateChangesHistogram: Histogram<string>,
+    // @InjectMetric('satisfied_rules')
+    // private readonly validRulesCounter: Guage<string>,
+    // @InjectMetric('emails_sent')
+    // private readonly emailsSentCounter: Guage<string>,
   ) {}
 
   @Cron('*/15 * * * * *')
   async handleCron() {
-    await this.fetchActiveCurrencyRates();
+    this.cronExecutionsCounter.inc();
+    // this.activeRulesGauge
+    await this.fetchSubscribedCurrencyPairs();
+    await this.checkActiveRules();
   }
 
-  private async fetchActiveCurrencyRates() {
+  private async fetchSubscribedCurrencyPairs() {
+    try {
+      const subscribedPairs =
+        await this.currenciesService.getAllSubscribedCurrencyPairs();
+
+      subscribedPairs.forEach((pair) => {
+        this.logger.log(`Subscribed pair: ${pair.fromCode}/${pair.toCode}`);
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to fetch subscribed currency pairs: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  private async checkActiveRules() {
     try {
       const activeRules = await this.RulesService.getAllActiveRules();
+      this.activeRulesGauge.set(activeRules.length);
 
       for (const rule of activeRules) {
         try {
@@ -60,10 +91,12 @@ export class SchedulerService {
                   rule.trendDirection,
                   rule.pairId,
                 );
-
                 this.logger.log(
                   `Currency pair: ${rule.currencyPair.fromCode} to ${rule.currencyPair.toCode}, Rate: ${rate}, Subscribed User: ${userOnRule.user.email}, Rule satisfied: ${isSatisfied}`,
                 );
+                if (isSatisfied) {
+                  // Email
+                }
               } catch (error) {
                 this.logger.error(
                   `Failed to check rule satisfaction: ${(error as Error).message}`,

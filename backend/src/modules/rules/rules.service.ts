@@ -330,7 +330,13 @@ export class RulesService {
           },
         },
         include: {
-          users: true,
+          users: {
+            include: {
+              user: {
+                select: { email: true },
+              },
+            },
+          },
           currencyPair: true,
         },
       });
@@ -340,6 +346,7 @@ export class RulesService {
           return ActiveRuleSchema.parse(rule);
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
+          console.log(error);
           throw new InvalidRuleDataError();
         }
       });

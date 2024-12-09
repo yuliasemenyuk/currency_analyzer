@@ -38,6 +38,7 @@ export function MonitoredPairsList({
                 {pair.isEnabled ? "Monitoring" : "Paused"}
               </span>
             </div>
+            <div>
             <button
               className={`toggle-button ${
                 pair.isEnabled ? "enabled" : "disabled"
@@ -52,6 +53,7 @@ export function MonitoredPairsList({
             >
               Delete
             </button>
+            </div>
           </li>
         ))}
       </ul>

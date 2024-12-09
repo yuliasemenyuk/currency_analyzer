@@ -355,4 +355,25 @@ export class CurrenciesService implements OnModuleInit {
       // throw new Error('Failed to fetch currency rate');
     }
   }
+
+  async getAllSubscribedCurrencyPairs(): Promise<CurrencyPair[]> {
+    try {
+      const pairs = await this.prisma.currencyPair.findMany({
+        where: {
+          users: {
+            some: { isEnabled: true },
+          },
+        },
+        include: {
+          fromCurrency: true,
+          toCurrency: true,
+        },
+      });
+
+      return pairs;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      throw new Error('Failed to fetch subscribed currency pairs');
+    }
+  }
 }
