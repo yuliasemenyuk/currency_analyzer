@@ -14,10 +14,6 @@ export class UsersService {
         where: { email },
       });
 
-      if (!user) {
-        throw new UserNotFoundError(email);
-      }
-
       return user;
     } catch (error) {
       if (error instanceof UserNotFoundError) {
@@ -44,6 +40,7 @@ export class UsersService {
         },
       });
     } catch (error) {
+      console.log(error);
       if (error instanceof DuplicateUserError) {
         throw error;
       }

@@ -8,7 +8,7 @@ interface AuthFormProps {
   onAuthSuccess: (token: string) => void;
 }
 
-const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
+export function AuthForm({ onAuthSuccess }: AuthFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isRegister, setIsRegister] = useState(false);
@@ -16,17 +16,24 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = isRegister
-        ? await registerUser(email, password)
-        : await loginUser(email, password);
-      const token = response.data.access_token;
-      Cookies.set("token", token, { expires: 1 });
-      onAuthSuccess(token);
+      if (isRegister) {
+        await registerUser(email, password);
+        const response = await loginUser(email, password);
+        const token = response.data.access_token;
+        Cookies.set("token", token, { expires: 1 });
+        onAuthSuccess(token);
+      } else {
+        const response = await loginUser(email, password);
+        const token = response.data.access_token;
+        Cookies.set("token", token, { expires: 1/24 });
+        onAuthSuccess(token);
+      }
     } catch (error) {
       toast.error("Authentication failed");
       console.error("Authentication failed", error);
     }
   };
+
 
   return (
     <div className="auth-form">
@@ -61,5 +68,3 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
     </div>
   );
 };
-
-export default AuthForm;
