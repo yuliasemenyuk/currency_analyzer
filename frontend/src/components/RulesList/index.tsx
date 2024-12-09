@@ -23,9 +23,9 @@ export function RulesList({
   onCancel,
 }: RulesListProps) {
   return (
-    <div className="rules-list">
+    <ul className="rules-list">
       {rules.map((rule) => (
-        <div key={rule.id} className="rule-item">
+        <li key={rule.id} className="rule-item">
           <div className="rule-info">
             <span>
               {rule.currencyPair.fromCode} → {rule.currencyPair.toCode}
@@ -110,8 +110,8 @@ export function RulesList({
               </>
             )}
           </div>
-        </div>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }

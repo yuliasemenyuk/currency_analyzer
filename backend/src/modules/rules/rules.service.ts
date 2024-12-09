@@ -153,6 +153,17 @@ export class RulesService {
         throw new SameCurrencyRuleError(fromCurrencyCode);
       }
 
+      const existingRulesCount = await this.prisma.rule.count({
+        where: {
+          users: { some: { userId, isArchived: false } },
+          trendDirection,
+        },
+      });
+
+      if (existingRulesCount >= 5) {
+        throw new MaxRulesReachedError(userId, trendDirection);
+      }
+
       const existingRule = await this.findRuleByCurrencies({
         fromCurrencyCode,
         toCurrencyCode,
@@ -207,49 +218,27 @@ export class RulesService {
   }
 
   async handleRuleSubscription(data: RuleToggleServiceDto) {
-    const { userId, ruleId } = data;
+    const { userId, ruleId, isEnabled } = data;
     try {
-      const existingRulesCount = await this.prisma.rule.count({
-        where: {
-          users: { some: { userId, isArchived: false } },
-          trendDirection: (
-            await this.prisma.rule.findUnique({
-              where: { id: ruleId },
-              select: { trendDirection: true },
-            })
-          )?.trendDirection,
-        },
-      });
-
-      if (existingRulesCount >= 5) {
-        throw new MaxRulesReachedError(
-          userId,
-          (
-            await this.prisma.rule.findUnique({
-              where: { id: ruleId },
-              select: { trendDirection: true },
-            })
-          )?.trendDirection,
-        );
-      }
       return await this.prisma.usersOnRules.upsert({
         where: {
           userId_ruleId: {
-            userId: data.userId,
-            ruleId: data.ruleId,
+            userId: userId,
+            ruleId: ruleId,
           },
         },
         update: {
           isEnabled: data.isEnabled,
         },
         create: {
-          user: { connect: { id: data.userId } },
-          rule: { connect: { id: data.ruleId } },
-          isEnabled: data.isEnabled,
+          user: { connect: { id: userId } },
+          rule: { connect: { id: ruleId } },
+          isEnabled: isEnabled,
         },
       });
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
+      console.log(error);
       if (error instanceof MaxRulesReachedError) {
         throw error;
       }

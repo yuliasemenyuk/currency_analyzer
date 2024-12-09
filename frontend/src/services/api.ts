@@ -19,6 +19,7 @@ export const getMonitoredPairs = () => api.get('/currencies/monitored');
 export const startMonitoringPair = (data: { fromCode: string; toCode: string }) => api.post('/currencies/monitor', data);
 export const disableMonitoredPair = (data: { pairId: string }) => api.patch('/currencies/disable', data);
 export const enableMonitoredPair = (data: { pairId: string }) => api.patch('/currencies/enable', data);
+export const stopMonitoringPair = (pairId: string) => api.delete(`/currencies/${pairId}`);
 export const createRule = (data: AddRuleWithCurrencyCodesDto) => api.post('/rules', data);
 export const getUsersRules = () => api.get('/rules');
 export const toggleRuleSubscription = (ruleId: string, data: { isEnabled: boolean }) => api.patch(`/rules/${ruleId}/toggle`, data);

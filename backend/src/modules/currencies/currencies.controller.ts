@@ -5,6 +5,7 @@ import {
   Param,
   Post,
   Patch,
+  Delete,
   Query,
   UseGuards,
   BadRequestException,
@@ -150,6 +151,20 @@ export class CurrenciesController {
         throw new NotFoundException(error.message);
       }
       throw new InternalServerErrorException('Failed to enable monitoring');
+    }
+  }
+
+  @Delete(':pairId')
+  @UseGuards(JwtAuthGuard)
+  async deleteMonitored(@User() user, @Param('pairId') pairId: string) {
+    try {
+      return await this.currenciesService.deleteMonitoredPair(user.id, pairId);
+    } catch (error) {
+      console.log('error', error);
+      if (error instanceof PairNotFoundError) {
+        throw new NotFoundException(error.message);
+      }
+      throw new InternalServerErrorException('Failed to delete monitored pair');
     }
   }
 

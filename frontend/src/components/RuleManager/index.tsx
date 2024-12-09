@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Currency, CurrencyPair, Rule, RuleSchema } from "../../types";
-import { getCurrencies, getMonitoredPairs, startMonitoringPair, disableMonitoredPair, enableMonitoredPair } from "../../services/api";
+import { getCurrencies, getMonitoredPairs, startMonitoringPair, disableMonitoredPair, enableMonitoredPair, stopMonitoringPair } from "../../services/api";
 import { CurrencyPairsConfigurator } from "../CurrencyPairsConfigurator";
 import { MonitoredPairsList } from "../MonitoredPairsList";
 import { RulesList } from "../RulesList";
@@ -130,7 +130,7 @@ export function RulesManager() {
     }
   };
 
-  const handleDelete = async (ruleId: string) => {
+  const handleDeleteRule = async (ruleId: string) => {
     try {
       await removeRule(ruleId);
       await fetchRules();
@@ -142,7 +142,7 @@ export function RulesManager() {
     }
   };
 
-  const handleRestore = async (ruleId: string) => {
+  const handleRestoreRule = async (ruleId: string) => {
     try {
       await restoreRule(ruleId);
       await fetchRules();
@@ -151,6 +151,19 @@ export function RulesManager() {
     } catch (err) {
       const error = err as { response: { data: { message: string } } };
       toast.error(error.response.data.message);
+      console.error(err);
+    }
+  };
+
+  const deleteMonitoredPair = async (pairId: string) => {
+    try {
+      await stopMonitoringPair(pairId);
+      await fetchMonitoredPairs();
+      // const { data } = await getMonitoredPairs();
+      // const pairsWithIndex = data.map((pair, index) => ({ ...pair, index }));
+      // setMonitoredPairs(pairsWithIndex);
+    } catch (err) {
+      toast.error('Failed to delete monitored pair');
       console.error(err);
     }
   };
@@ -165,6 +178,7 @@ export function RulesManager() {
       <MonitoredPairsList
         monitoredPairs={monitoredPairs}
         toggleMonitoredPair={toggleMonitoredPair}
+        deleteMonitoredPair={deleteMonitoredPair}
       />
       <RuleConfigurator
         monitoredPairs={monitoredPairs}
@@ -177,7 +191,7 @@ export function RulesManager() {
         onToggle={handleToggle}
         onEdit={handleEdit}
         onSave={handleSave}
-        onDelete={handleDelete}
+        onDelete={handleDeleteRule}
         onCancel={(ruleId) => setEditMode({ ...editMode, [ruleId]: false })}
       />
       <div className="toggle-archived" onClick={() => setShowArchived(!showArchived)}>
@@ -187,7 +201,7 @@ export function RulesManager() {
       {showArchived && (
         <ArchivedRulesList
           archivedRules={archivedRules}
-          onRestore={handleRestore}
+          onRestore={handleRestoreRule}
         />
       )}
       {showArchived && archivedRules.length === 0 && (
