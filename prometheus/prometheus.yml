@@ -4,4 +4,4 @@ global:
 scrape_configs:
   - job_name: 'nestjs'
     static_configs:
-      - targets: ['collector_service:3009']
+      - targets: ['collector_service:3010']

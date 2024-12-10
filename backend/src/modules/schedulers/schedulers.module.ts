@@ -10,12 +10,14 @@ import { HttpModule } from '@nestjs/axios';
 import { CurrenciesService } from '../currencies/currencies.service';
 import { RulesService } from '../rules/rules.service';
 import { PrismaModule } from 'prisma/prisma.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     HttpModule,
     PrismaModule,
+    EmailModule,
     PrometheusModule.register({
       path: '/metrics',
     }),
@@ -35,6 +37,7 @@ import { PrismaModule } from 'prisma/prisma.module';
     makeGaugeProvider({
       name: 'currency_rate_changes',
       help: 'Currency rate changes',
+      labelNames: ['pair'],
     }),
   ],
 })

@@ -186,6 +186,31 @@ export class RulesService {
         }
       }
 
+      const archivedRule = await this.prisma.rule.findFirst({
+        where: {
+          currencyPair: {
+            fromCode: fromCurrencyCode,
+            toCode: toCurrencyCode,
+          },
+          percentage,
+          trendDirection,
+          users: {
+            some: {
+              userId,
+              isArchived: true,
+            },
+          },
+        },
+      });
+
+      if (archivedRule) {
+        await this.restoreRule({
+          userId,
+          ruleId: archivedRule.id,
+        });
+        return archivedRule;
+      }
+
       let newRule;
       if (existingRule) {
         await this.handleRuleSubscription({

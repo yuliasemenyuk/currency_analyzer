@@ -48,31 +48,39 @@ export class CurrenciesService implements OnModuleInit {
         where: { code: { notIn: currencyCodes } },
       });
 
-      for (const [code, name] of Object.entries(currencies)) {
-        await this.prisma.currency.upsert({
-          where: { code },
-          update: { name },
-          create: { code, name },
-        });
-      }
+      // for (const [code, name] of Object.entries(currencies)) {
+      //   await this.prisma.currency.upsert({
+      //     where: { code },
+      //     update: { name },
+      //     create: { code, name },
+      //   });
+      // }
 
-      const existingPairs = await this.prisma.currencyPair.findMany();
-      if (existingPairs.length === 0) {
-        for (const fromCode of currencyCodes) {
-          for (const toCode of currencyCodes) {
-            if (fromCode !== toCode) {
-              await this.prisma.currencyPair.create({
-                data: {
-                  fromCode,
-                  toCode,
-                },
-              });
-            }
-          }
-        }
-      } else {
-        await this.updatePairs(currencyCodes);
-      }
+      await this.prisma.currency.createMany({
+        data: Object.entries(currencies).map(([code, name]) => ({
+          code,
+          name,
+        })),
+        skipDuplicates: true, // Avoids errors if the record already exists
+      });
+
+      // const existingPairs = await this.prisma.currencyPair.findMany();
+      // if (existingPairs.length === 0) {
+      //   for (const fromCode of currencyCodes) {
+      //     for (const toCode of currencyCodes) {
+      //       if (fromCode !== toCode) {
+      //         await this.prisma.currencyPair.create({
+      //           data: {
+      //             fromCode,
+      //             toCode,
+      //           },
+      //         });
+      //       }
+      //     }
+      //   }
+      // } else {
+      //   await this.updatePairs(currencyCodes);
+      // }
     } catch (error) {
       if (error instanceof InvalidCurrencyDataError) {
         this.logger.error(
