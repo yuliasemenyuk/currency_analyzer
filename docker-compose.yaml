@@ -1,67 +1,69 @@
-version: '3.8'
+version: "3.8"
 
 services:
   admin_service:
-    build: ./backend  # Вказує папку, в якій знаходиться Dockerfile
-    command: 
-     - dist/src/main
+    build: ./backend # Вказує папку, в якій знаходиться Dockerfile
+    command:
+      - dist/src/main
     env_file:
       - .env
     environment:
       - POSTGRES_HOST=pg
       - REDIS_HOST=redis
     ports:
-      - "3000:3000"  # Порт, на якому буде доступний сервіс
+      - "3000:3000" # Порт, на якому буде доступний сервіс
     links:
-      - pg           # Залежить від сервісу бази даних
-      - redis        # Залежить від Redis
+      - pg # Залежить від сервісу бази даних
+      - redis # Залежить від Redis
 
   collector_service:
-    build: ./backend  # Вказує папку, в якій знаходиться Dockerfile
-    command: 
-     - dist/src/scheduler
+    build: ./backend # Вказує папку, в якій знаходиться Dockerfile
+    command:
+      - dist/src/scheduler
     env_file:
       - .env
     environment:
       - POSTGRES_HOST=pg
       - REDIS_HOST=redis
     links:
-      - pg          # Залежить від сервісу бази даних
-      - redis       # Залежить від Redis
+      - pg # Залежить від сервісу бази даних
+      - redis # Залежить від Redis
 
-  # frontend_service:
-  #   build: ./frontend_service   # Вказує папку, в якій знаходиться Dockerfile
-  #   ports:
-  #     - "3001:3001"  # Порт для фронтенду
-  #   depends_on:
-  #     - admin_service
+  frontend_service:
+    build: ./frontend # Вказує папку, в якій знаходиться Dockerfile
+    ports:
+      - "3001:3000" # Порт для фронтенду
+    environment:
+      - WDS_SOCKET_PORT=0
+    depends_on:
+      - admin_service
 
   pg:
-    image: postgres:latest  # Використовує останню версію PostgreSQL
+    image: postgres:latest # Використовує останню версію PostgreSQL
     restart: always
     env_file:
       - .env
     volumes:
-      - db_data:/var/lib/postgresql/data  # Постійне зберігання даних бази даних
+      - db_data:/var/lib/postgresql/data # Постійне зберігання даних бази даних
 
   redis:
-    image: redis:latest  # Використовує останню версію Redis
+    image: redis:latest # Використовує останню версію Redis
     restart: always
 
   prometheus:
-    image: prom/prometheus:latest  # Використовує останню версію Prometheus
+    image: prom/prometheus:latest # Використовує останню версію Prometheus
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml  # Конфігураційний файл для Prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml # Конфігураційний файл для Prometheus
     links:
       - admin_service
       - collector_service
 
   grafana:
-    image: grafana/grafana:latest  # Використовує останню версію Grafana
+    image: grafana/grafana:latest # Використовує останню версію Grafana
     ports:
-      - "3001:3000"  # Доступ до Grafana на порту 3001
+      - "3002:3000" # Доступ до Grafana на порту 3002
     volumes:
       - ./grafana/dashboards:/var/lib/grafana/dashboard
     depends_on:
@@ -70,4 +72,4 @@ services:
       - prometheus
 
 volumes:
-  db_data:  # Оголошення тому для зберігання даних бази даних
+  db_data: # Оголошення тому для зберігання даних бази даних
