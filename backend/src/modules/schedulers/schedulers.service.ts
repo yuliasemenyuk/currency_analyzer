@@ -16,22 +16,21 @@ export class SchedulerService {
     private readonly currenciesService: CurrenciesService,
     private readonly RulesService: RulesService,
     private prisma: PrismaService,
-    @InjectMetric('scheduler_cron_executions_total')
-    private readonly cronExecutionsCounter: Counter<string>,
-    @InjectMetric('scheduler_active_rules')
-    private readonly activeRulesGauge: Gauge<string>,
-    // @InjectMetric('currency_rate_changes')
-    // private readonly rateChangesHistogram: Histogram<string>,
-    // @InjectMetric('satisfied_rules')
-    // private readonly validRulesCounter: Guage<string>,
-    // @InjectMetric('emails_sent')
-    // private readonly emailsSentCounter: Guage<string>,
+    // @InjectMetric('scheduler_cron_executions_total')
+    // private readonly cronExecutionsCounter: Counter<string>,
+    // @InjectMetric('scheduler_active_rules')
+    // private readonly activeRulesGauge: Gauge<string>,
+    @InjectMetric('currency_rate_changes')
+    private readonly rateChangesGauge: Gauge<string>,
+    @InjectMetric('satisfied_rules_total')
+    private readonly satisfiedRulesCounter: Counter<string>,
+    @InjectMetric('notification_emails_sent_total')
+    private readonly emailsSentCounter: Counter<string>,
   ) {}
 
   @Cron('*/15 * * * * *')
   async handleCron() {
-    this.cronExecutionsCounter.inc();
-    // this.activeRulesGauge
+    console.log('Cron job running every 15 seconds');
     await this.fetchSubscribedCurrencyPairs();
     await this.checkActiveRules();
   }
@@ -54,69 +53,105 @@ export class SchedulerService {
   private async checkActiveRules() {
     try {
       const activeRules = await this.RulesService.getAllActiveRules();
-      this.activeRulesGauge.set(activeRules.length);
 
       for (const rule of activeRules) {
-        try {
-          const cacheKey = `currency_rate_${rule.currencyPair.fromCode}_${rule.currencyPair.toCode}`;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const rate = await this.currenciesService.getCurrencyRate(
+          rule.currencyPair.fromCode,
+          rule.currencyPair.toCode,
+        );
 
-          try {
-            const cachedRate = await this.redis.get(cacheKey);
-            const rate = await this.currenciesService.getCurrencyRate(
-              rule.currencyPair.fromCode,
-              rule.currencyPair.toCode,
-            );
+        // Track rate changes
+        this.rateChangesGauge.set(
+          {
+            pair: `${rule.currencyPair.fromCode}/${rule.currencyPair.toCode}`,
+          },
+          rate,
+        );
 
-            if (cachedRate && rate.toString() === cachedRate) {
-              this.logger.log(
-                `Using cached rate for ${cacheKey}: ${cachedRate}`,
-              );
-            } else {
-              await this.redis.set(cacheKey, rate.toString(), 'EX', 600);
-              this.logger.log(`Fetched new rate for ${cacheKey}: ${rate}`);
-            }
-
-            await this.prisma.currencyRateHistory.create({
-              data: {
-                currencyPair: { connect: { id: rule.pairId } },
-                rate,
-              },
-            });
-
-            for (const userOnRule of rule.users) {
-              try {
-                const isSatisfied = await this.checkRuleSatisfaction(
-                  rate,
-                  rule.percentage,
-                  rule.trendDirection,
-                  rule.pairId,
-                );
-                this.logger.log(
-                  `Currency pair: ${rule.currencyPair.fromCode} to ${rule.currencyPair.toCode}, Rate: ${rate}, Subscribed User: ${userOnRule.user.email}, Rule satisfied: ${isSatisfied}`,
-                );
-                if (isSatisfied) {
-                  // Email
-                }
-              } catch (error) {
-                this.logger.error(
-                  `Failed to check rule satisfaction: ${(error as Error).message}`,
-                );
-                continue;
-              }
-            }
-          } catch (error) {
-            this.logger.error(
-              `Failed to process rate for ${cacheKey}: ${(error as Error).message}`,
-            );
-            continue;
-          }
-        } catch (error) {
-          this.logger.error(
-            `Failed to process rule ${rule.id}: ${(error as Error).message}`,
+        for (const userOnRule of rule.users) {
+          const isSatisfied = await this.checkRuleSatisfaction(
+            rate,
+            rule.percentage,
+            rule.trendDirection,
+            rule.pairId,
           );
-          continue;
+
+          console.log(
+            rate,
+            `${rule.currencyPair.fromCode}/${rule.currencyPair.toCode}, ${userOnRule.user.email}`,
+          );
+          console.log('isSatisfied', isSatisfied);
+          if (isSatisfied) {
+            this.satisfiedRulesCounter.inc({
+              pair: `${rule.currencyPair.fromCode}/${rule.currencyPair.toCode}`,
+              direction: rule.trendDirection,
+            });
+            //Email sending logic
+            this.emailsSentCounter.inc();
+          }
         }
       }
+      //   try {
+      //     const cacheKey = `currency_rate_${rule.currencyPair.fromCode}_${rule.currencyPair.toCode}`;
+
+      //     try {
+      //       const cachedRate = await this.redis.get(cacheKey);
+      //       const rate = await this.currenciesService.getCurrencyRate(
+      //         rule.currencyPair.fromCode,
+      //         rule.currencyPair.toCode,
+      //       );
+
+      //       if (cachedRate && rate.toString() === cachedRate) {
+      //         this.logger.log(
+      //           `Using cached rate for ${cacheKey}: ${cachedRate}`,
+      //         );
+      //       } else {
+      //         await this.redis.set(cacheKey, rate.toString(), 'EX', 600);
+      //         this.logger.log(`Fetched new rate for ${cacheKey}: ${rate}`);
+      //       }
+
+      //       await this.prisma.currencyRateHistory.create({
+      //         data: {
+      //           currencyPair: { connect: { id: rule.pairId } },
+      //           rate,
+      //         },
+      //       });
+
+      //       for (const userOnRule of rule.users) {
+      //         try {
+      //           const isSatisfied = await this.checkRuleSatisfaction(
+      //             rate,
+      //             rule.percentage,
+      //             rule.trendDirection,
+      //             rule.pairId,
+      //           );
+      //           this.logger.log(
+      //             `Currency pair: ${rule.currencyPair.fromCode} to ${rule.currencyPair.toCode}, Rate: ${rate}, Subscribed User: ${userOnRule.user.email}, Rule satisfied: ${isSatisfied}`,
+      //           );
+      //           if (isSatisfied) {
+      //             // Email
+      //           }
+      //         } catch (error) {
+      //           this.logger.error(
+      //             `Failed to check rule satisfaction: ${(error as Error).message}`,
+      //           );
+      //           continue;
+      //         }
+      //       }
+      //     } catch (error) {
+      //       this.logger.error(
+      //         `Failed to process rate for ${cacheKey}: ${(error as Error).message}`,
+      //       );
+      //       continue;
+      //     }
+      //   } catch (error) {
+      //     this.logger.error(
+      //       `Failed to process rule ${rule.id}: ${(error as Error).message}`,
+      //     );
+      //     continue;
+      //   }
+      // }
     } catch (error) {
       this.logger.error(
         `Failed to fetch active rules: ${(error as Error).message}`,

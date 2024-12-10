@@ -342,6 +342,7 @@ export class RulesService {
       });
 
       return activeRules.map((rule) => {
+        console.log(rule, 'rule');
         try {
           return ActiveRuleSchema.parse(rule);
           // eslint-disable-next-line @typescript-eslint/no-unused-vars

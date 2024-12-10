@@ -3,7 +3,7 @@ import { SchedulerModule } from './modules/schedulers/schedulers.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(SchedulerModule);
-  await app.listen(3009);
+  await app.listen(3010);
   console.log('Scheduler is running...');
 }
 

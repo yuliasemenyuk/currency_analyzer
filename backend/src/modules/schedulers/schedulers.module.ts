@@ -25,12 +25,16 @@ import { PrismaModule } from 'prisma/prisma.module';
     CurrenciesService,
     RulesService,
     makeCounterProvider({
-      name: 'scheduler_cron_executions_total',
-      help: 'The total number of times the scheduler cron job has executed',
+      name: 'notification_emails_sent_total',
+      help: 'The total number of sent notification emails',
+    }),
+    makeCounterProvider({
+      name: 'satisfied_rules_total',
+      help: 'The total number of satisfied rules',
     }),
     makeGaugeProvider({
-      name: 'scheduler_active_rules',
-      help: 'The number of active rules',
+      name: 'currency_rate_changes',
+      help: 'Currency rate changes',
     }),
   ],
 })

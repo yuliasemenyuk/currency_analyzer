@@ -16,18 +16,18 @@ services:
       - pg # Залежить від сервісу бази даних
       - redis # Залежить від Redis
 
-  collector_service:
-    build: ./backend # Вказує папку, в якій знаходиться Dockerfile
-    command:
-      - dist/src/scheduler
-    env_file:
-      - .env
-    environment:
-      - POSTGRES_HOST=pg
-      - REDIS_HOST=redis
-    links:
-      - pg # Залежить від сервісу бази даних
-      - redis # Залежить від Redis
+  # collector_service:
+  #   build: ./backend # Вказує папку, в якій знаходиться Dockerfile
+  #   command:
+  #     - dist/src/scheduler
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     - POSTGRES_HOST=pg
+  #     - REDIS_HOST=redis
+  #   links:
+  #     - pg # Залежить від сервісу бази даних
+  #     - redis # Залежить від Redis
 
   frontend_service:
     build: ./frontend # Вказує папку, в якій знаходиться Dockerfile
@@ -41,6 +41,8 @@ services:
   pg:
     image: postgres:latest # Використовує останню версію PostgreSQL
     restart: always
+    ports:
+      - "5432:5432"
     env_file:
       - .env
     volumes:
@@ -49,6 +51,8 @@ services:
   redis:
     image: redis:latest # Використовує останню версію Redis
     restart: always
+    ports:
+      - "6379:6379"
 
   prometheus:
     image: prom/prometheus:latest # Використовує останню версію Prometheus
@@ -58,7 +62,7 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml # Конфігураційний файл для Prometheus
     links:
       - admin_service
-      - collector_service
+      #- collector_service
 
   grafana:
     image: grafana/grafana:latest # Використовує останню версію Grafana
@@ -66,8 +70,6 @@ services:
       - "3002:3000" # Доступ до Grafana на порту 3002
     volumes:
       - ./grafana/dashboards:/var/lib/grafana/dashboard
-    depends_on:
-      - prometheus
     links:
       - prometheus
 
