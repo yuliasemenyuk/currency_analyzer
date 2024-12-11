@@ -221,7 +221,7 @@ export function RulesManager() {
           />
           <RuleConfigurator
             monitoredPairs={monitoredPairs}
-            onRuleAdded={fetchRules}
+            onRuleAdded={() => {fetchRules(); fetchArchivedRules();}}
           />
           <RulesList
             rules={rules}

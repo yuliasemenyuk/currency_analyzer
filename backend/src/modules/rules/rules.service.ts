@@ -3,11 +3,11 @@ import { PrismaService } from 'prisma/prisma.service';
 import {
   ActiveRuleSchema,
   AddRuleWithCurrencyCodesDto,
-  // RuleListResponse,
-  // RuleListSchema,
   CreateRuleServiceDto,
   RuleToggleServiceDto,
   RuleArchiveServiceDto,
+  // ActiveRule,
+  RuleListResponse,
 } from './rules.schema';
 import {
   InvalidRuleDataError,
@@ -18,12 +18,13 @@ import {
   PairNotFoundError,
   RuleAlreadySubscribedError,
 } from './rules.errors';
+import { Rule } from '@prisma/client';
 
 @Injectable()
 export class RulesService {
   constructor(private prisma: PrismaService) {}
 
-  async getAllUsersRules(userId: string) {
+  async getAllUsersRules(userId: string): Promise<RuleListResponse[]> {
     try {
       const userRules = await this.prisma.rule.findMany({
         where: {
@@ -38,14 +39,13 @@ export class RulesService {
           currencyPair: true,
           users: {
             where: { userId },
-            select: { isEnabled: true },
           },
         },
       });
 
-      return userRules.map((rule) => ({
-        ...rule,
-        isEnabled: rule.users[0]?.isEnabled ?? false,
+      return userRules.map(({ users, ...rest }) => ({
+        ...rest,
+        isEnabled: users[0]?.isEnabled ?? false,
       }));
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
@@ -67,10 +67,6 @@ export class RulesService {
         },
       });
 
-      if (!pair) {
-        throw new PairNotFoundError(`${fromCurrencyCode}/${toCurrencyCode}`);
-      }
-
       return this.prisma.rule.findFirst({
         where: {
           currencyPair: { id: pair.id },
@@ -79,10 +75,8 @@ export class RulesService {
           isEnabled: true,
         },
       });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      if (error instanceof PairNotFoundError) {
-        throw error;
-      }
       throw new Error('Failed to find rule');
     }
   }
@@ -139,7 +133,7 @@ export class RulesService {
     }
   }
 
-  async handleUserRuleCreation(data: CreateRuleServiceDto) {
+  async handleUserRuleCreation(data: CreateRuleServiceDto): Promise<Rule> {
     try {
       const {
         userId,
@@ -268,7 +262,7 @@ export class RulesService {
   async removeRule(data: RuleArchiveServiceDto) {
     const { userId, ruleId } = data;
     try {
-      const rule = await this.prisma.usersOnRules.update({
+      await this.prisma.usersOnRules.update({
         where: {
           userId_ruleId: {
             userId: userId,
@@ -281,7 +275,7 @@ export class RulesService {
         },
       });
 
-      return rule;
+      // return rule;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       // if (error instanceof MaxRulesReachedError) {
@@ -291,7 +285,7 @@ export class RulesService {
     }
   }
 
-  async restoreRule(data: RuleArchiveServiceDto) {
+  async restoreRule(data: RuleArchiveServiceDto): Promise<void> {
     const { userId, ruleId } = data;
     try {
       const existingRulesCount = await this.prisma.rule.count({
@@ -318,7 +312,7 @@ export class RulesService {
         );
       }
 
-      const rule = await this.prisma.usersOnRules.update({
+      await this.prisma.usersOnRules.update({
         where: {
           userId_ruleId: {
             userId,
@@ -328,7 +322,7 @@ export class RulesService {
         data: { isArchived: false, isEnabled: true },
       });
 
-      return rule;
+      // return rule;
     } catch (error) {
       console.log(error);
       if (error instanceof MaxRulesReachedError) {
@@ -362,7 +356,6 @@ export class RulesService {
       });
 
       return activeRules.map((rule) => {
-        console.log(rule, 'rule');
         try {
           return ActiveRuleSchema.parse(rule);
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -379,7 +372,7 @@ export class RulesService {
     }
   }
 
-  async getArchivedRules(userId: string) {
+  async getArchivedRules(userId: string): Promise<RuleListResponse[]> {
     try {
       const archivedRules = await this.prisma.rule.findMany({
         where: {
@@ -389,14 +382,14 @@ export class RulesService {
           currencyPair: true,
           users: {
             where: { userId },
-            select: { isEnabled: true },
+            // select: { isEnabled: true },
           },
         },
       });
 
-      return archivedRules.map((rule) => ({
-        ...rule,
-        isEnabled: rule.users[0]?.isEnabled ?? false,
+      return archivedRules.map(({ users, ...rest }) => ({
+        ...rest,
+        isEnabled: users[0]?.isEnabled ?? false,
       }));
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {

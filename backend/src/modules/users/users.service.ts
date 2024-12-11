@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { CreateUserDto } from './users.schema';
+import { AuthUserDto, UserDto } from './users.schema';
 import { DuplicateUserError, UserNotFoundError } from './users.errors';
 import * as bcrypt from 'bcrypt';
 
@@ -23,7 +23,7 @@ export class UsersService {
     }
   }
 
-  async createUser(data: CreateUserDto) {
+  async createUser(data: AuthUserDto) {
     try {
       const existingUser = await this.findByEmail(data.email);
 
@@ -48,7 +48,7 @@ export class UsersService {
     }
   }
 
-  async validateUser(email: string, password: string): Promise<any> {
+  async validateUser(email: string, password: string): Promise<UserDto> {
     try {
       const user = await this.findByEmail(email);
 

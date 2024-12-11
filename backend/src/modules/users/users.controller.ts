@@ -8,7 +8,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserSchema, CreateUserDto } from './users.schema';
+import { AuthUserSchema, AuthUserDto } from './users.schema';
 import { DuplicateUserError } from './users.errors';
 import { AuthService } from '../auth/auth.service';
 
@@ -20,8 +20,8 @@ export class UsersController {
   ) {}
 
   @Post('register')
-  async createUser(@Body() body: unknown): Promise<CreateUserDto> {
-    const validated = CreateUserSchema.safeParse(body);
+  async createUser(@Body() body: unknown): Promise<AuthUserDto> {
+    const validated = AuthUserSchema.safeParse(body);
     if (!validated.success) {
       throw new BadRequestException(validated.error.errors);
     }
@@ -37,11 +37,15 @@ export class UsersController {
   }
 
   @Post('login')
-  async login(@Body() body: { email: string; password: string }) {
+  async login(@Body() body: unknown): Promise<{ access_token: string }> {
+    const validated = AuthUserSchema.safeParse(body);
+    if (!validated.success) {
+      throw new BadRequestException(validated.error.errors[0].message);
+    }
     try {
       const user = await this.usersService.validateUser(
-        body.email,
-        body.password,
+        validated.data.email,
+        validated.data.password,
       );
       return this.authService.login(user);
     } catch (error) {

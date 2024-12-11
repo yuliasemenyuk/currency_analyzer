@@ -6,7 +6,7 @@ import {
   Post,
   Patch,
   Delete,
-  Query,
+  // Query,
   UseGuards,
   BadRequestException,
   NotFoundException,
@@ -17,11 +17,12 @@ import { CurrenciesService } from './currencies.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
   Currency,
-  RateQuerySchema,
+  // RateQuerySchema,
   MonitoringPairRequestSchema,
   ToggleMonitorRequestSchema,
   MonitoringPairServiceSchema,
   ToggleMonitorServiceSchema,
+  MonitoredPairResponse,
 } from './currencies.schema';
 import { User } from '../../common/decorators/user.decorator';
 import {
@@ -30,7 +31,7 @@ import {
   InvalidCurrencyDataError,
   SameCurrencyError,
 } from './currencies.errors';
-import { CurrencyPair } from '@prisma/client';
+// import { CurrencyPair } from '@prisma/client';
 // import z from 'zod';
 
 @Controller('currencies')
@@ -49,29 +50,11 @@ export class CurrenciesController {
     }
   }
 
-  // @Get('monitored')
-  // @UseGuards(BasicAuthGuard)
-  // async getMonitoredCurrencies(
-  //   @User() user,
-  //   @Query('userId') userId: string,
-  // ): Promise<CurrencyPair[]> {
-  //   console.log('user', user);
-  //   const validated = z.string().uuid().safeParse(userId);
-
-  //   if (!validated.success) {
-  //     throw new BadRequestException('Invalid user id format');
-  //   }
-
-  //   try {
-  //     return await this.currenciesService.getMonitoredPairs(validated.data);
-  //     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  //   } catch (error) {
-  //     throw new InternalServerErrorException('Failed to fetch monitored pairs');
-  //   }
-  // }
   @Get('monitored')
   @UseGuards(JwtAuthGuard)
-  async getMonitoredCurrencies(@User() user): Promise<CurrencyPair[]> {
+  async getMonitoredCurrencies(
+    @User() user: { id: string },
+  ): Promise<MonitoredPairResponse[]> {
     try {
       return await this.currenciesService.getMonitoredPairs(user.id);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -82,10 +65,13 @@ export class CurrenciesController {
 
   @Post('monitor')
   @UseGuards(JwtAuthGuard)
-  async startMonitoringCurrencies(@User() user, @Body() body: unknown) {
+  async startMonitoringCurrencies(
+    @User() user: { id: string },
+    @Body() body: unknown,
+  ): Promise<void> {
     const validated = MonitoringPairRequestSchema.safeParse(body);
     if (!validated.success) {
-      throw new BadRequestException(validated.error.errors);
+      throw new BadRequestException(validated.error.errors[0].message);
     }
 
     const serviceData = MonitoringPairServiceSchema.parse({
@@ -94,7 +80,7 @@ export class CurrenciesController {
     });
 
     try {
-      return await this.currenciesService.startMonitoringPair(serviceData);
+      await this.currenciesService.startMonitoringPair(serviceData);
     } catch (error) {
       console.log('error', error);
       if (error instanceof SameCurrencyError) {
@@ -109,7 +95,7 @@ export class CurrenciesController {
 
   @Patch('disable')
   @UseGuards(JwtAuthGuard)
-  async disableMonitored(@User() user, @Body() body: unknown) {
+  async disableMonitored(@User() user: { id: string }, @Body() body: unknown) {
     const validated = ToggleMonitorRequestSchema.safeParse(body);
     if (!validated.success) {
       throw new BadRequestException(validated.error.errors);
@@ -131,7 +117,7 @@ export class CurrenciesController {
 
   @Patch('enable')
   @UseGuards(JwtAuthGuard)
-  async enableMonitored(@User() user, @Body() body: unknown) {
+  async enableMonitored(@User() user: { id: string }, @Body() body: unknown) {
     const validated = ToggleMonitorRequestSchema.safeParse(body);
     if (!validated.success) {
       throw new BadRequestException(validated.error.errors);
@@ -154,7 +140,10 @@ export class CurrenciesController {
 
   @Delete(':pairId')
   @UseGuards(JwtAuthGuard)
-  async deleteMonitored(@User() user, @Param('pairId') pairId: string) {
+  async deleteMonitored(
+    @User() user: { id: string },
+    @Param('pairId') pairId: string,
+  ) {
     try {
       return await this.currenciesService.deleteMonitoredPair(user.id, pairId);
     } catch (error) {
@@ -163,30 +152,6 @@ export class CurrenciesController {
         throw new NotFoundException(error.message);
       }
       throw new InternalServerErrorException('Failed to delete monitored pair');
-    }
-  }
-
-  @Get('rates')
-  async getRates(@Query() query: unknown) {
-    const validated = RateQuerySchema.safeParse(query);
-    if (!validated.success) {
-      throw new BadRequestException(validated.error.errors);
-    }
-
-    if (validated.data.from === validated.data.to) {
-      throw new BadRequestException('From and to currencies must be different');
-    }
-
-    try {
-      return await this.currenciesService.getRates(
-        validated.data.from,
-        validated.data.to,
-      );
-    } catch (error) {
-      if (error instanceof InvalidCurrencyDataError) {
-        throw new BadRequestException(error.message);
-      }
-      throw new InternalServerErrorException('Failed to fetch rates');
     }
   }
 
@@ -213,9 +178,4 @@ export class CurrenciesController {
   //     throw new InternalServerErrorException('Failed to fetch rates');
   //   }
   // }
-
-  @Get(':id')
-  findById(@Param('id') id: string): string {
-    return `This action returns a currency based on id - ${id}`;
-  }
 }

@@ -2,16 +2,18 @@ import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import {
   Currency,
   CurrencySchema,
+  MonitoredPairResponse,
   CurrenciesResponseSchema,
-  ExchangeRateSchema,
-  ExchangeRate,
+  // ExchangeRateSchema,
+  // ExchangeRate,
   MonitoringPairServiceDto,
   ToggleMonitorServiceDto,
+  CurrencyPair,
 } from './currencies.schema';
 import { PrismaService } from 'prisma/prisma.service';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { CurrencyPair } from '@prisma/client';
+// import { CurrencyPair } from '@prisma/client';
 import {
   InvalidCurrencyDataError,
   DuplicatePairError,
@@ -19,7 +21,6 @@ import {
   PairNotFoundError,
 } from './currencies.errors';
 
-// const apiUrl = 'https://api.frankfurter.app';
 const apiUrl = 'https://openexchangerates.org/api';
 const API_KEY = process.env.OPEN_EXCHANGE_RATES_API_KEY;
 
@@ -48,14 +49,6 @@ export class CurrenciesService implements OnModuleInit {
         where: { code: { notIn: currencyCodes } },
       });
 
-      // for (const [code, name] of Object.entries(currencies)) {
-      //   await this.prisma.currency.upsert({
-      //     where: { code },
-      //     update: { name },
-      //     create: { code, name },
-      //   });
-      // }
-
       await this.prisma.currency.createMany({
         data: Object.entries(currencies).map(([code, name]) => ({
           code,
@@ -64,8 +57,6 @@ export class CurrenciesService implements OnModuleInit {
         skipDuplicates: true,
       });
 
-      // const existingPairs = await this.prisma.currencyPair.findMany();
-      // if (existingPairs.length === 0) {
       function generatePairs(
         array1: string[],
         array2: string[],
@@ -85,7 +76,6 @@ export class CurrenciesService implements OnModuleInit {
         data: pairsToCreate,
         skipDuplicates: true,
       });
-      // }
     } catch (error) {
       if (error instanceof InvalidCurrencyDataError) {
         this.logger.error(
@@ -100,28 +90,6 @@ export class CurrenciesService implements OnModuleInit {
       }
     }
   }
-
-  // private async updatePairs(currencyCodes: string[]) {
-  //   try {
-  //     for (const fromCode of currencyCodes) {
-  //       for (const toCode of currencyCodes) {
-  //         if (fromCode !== toCode) {
-  //           await this.prisma.currencyPair.upsert({
-  //             where: { fromCode_toCode: { fromCode, toCode } },
-  //             update: {},
-  //             create: {
-  //               fromCode,
-  //               toCode,
-  //             },
-  //           });
-  //         }
-  //       }
-  //     }
-  //     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  //   } catch (error) {
-  //     throw new Error('Failed to update currency pairs');
-  //   }
-  // }
 
   async findAll(): Promise<Currency[]> {
     try {
@@ -142,7 +110,7 @@ export class CurrenciesService implements OnModuleInit {
     }
   }
 
-  async getMonitoredPairs(userId: string): Promise<CurrencyPair[]> {
+  async getMonitoredPairs(userId: string): Promise<MonitoredPairResponse[]> {
     try {
       const pairs = await this.prisma.currencyPair.findMany({
         where: {
@@ -151,29 +119,25 @@ export class CurrenciesService implements OnModuleInit {
           },
         },
         include: {
-          fromCurrency: true,
-          toCurrency: true,
           users: {
             where: { userId },
-            select: { userId: true, isEnabled: true },
           },
         },
       });
 
-      return pairs.map((pair) => {
-        const user = pair.users.find((u) => u.userId === userId);
-        return {
-          ...pair,
-          isEnabled: user?.isEnabled ?? false,
-        };
-      });
+      console.log(pairs, 'PAIRS');
+
+      return pairs.map(({ users, ...rest }) => ({
+        ...rest,
+        isEnabled: users[0]?.isEnabled ?? false,
+      }));
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       throw new Error('Failed to fetch monitored pairs');
     }
   }
 
-  async startMonitoringPair(data: MonitoringPairServiceDto) {
+  async startMonitoringPair(data: MonitoringPairServiceDto): Promise<void> {
     const { userId, fromCode, toCode } = data;
 
     try {
@@ -198,7 +162,7 @@ export class CurrenciesService implements OnModuleInit {
         throw new DuplicatePairError(fromCode, toCode);
       }
 
-      return await this.prisma.UsersOnPairs.create({
+      await this.prisma.UsersOnPairs.create({
         data: {
           user: { connect: { id: userId } },
           pair: { connect: { id: pair.id } },
@@ -279,15 +243,15 @@ export class CurrenciesService implements OnModuleInit {
 
   async deleteMonitoredPair(userId: string, pairId: string) {
     try {
-      // const subscription = await this.prisma.UsersOnPairs.findUnique({
-      //   where: {
-      //     userId_pairId: { userId, pairId },
-      //   },
-      // });
+      const subscription = await this.prisma.UsersOnPairs.findUnique({
+        where: {
+          userId_pairId: { userId, pairId },
+        },
+      });
 
-      // if (!subscription) {
-      //   throw new PairNotFoundError(pairId);
-      // }
+      if (!subscription) {
+        throw new PairNotFoundError(pairId);
+      }
 
       await this.prisma.UsersOnPairs.delete({
         where: {
@@ -307,49 +271,48 @@ export class CurrenciesService implements OnModuleInit {
       });
     } catch (error) {
       console.log(error);
-      // if (error instanceof PairNotFoundError) {
-      //   throw error;
-      // }
+      if (error instanceof PairNotFoundError) {
+        throw error;
+      }
       throw new Error('Failed to delete monitored pair');
     }
   }
 
-  async getRates(from: string, to: string): Promise<ExchangeRate> {
-    try {
-      const { data } = await firstValueFrom(
-        this.httpService.get(
-          `${apiUrl}/latest.json?app_id=${API_KEY}&base=${from}&symbols=${to}`,
-        ),
-      );
+  // async getRates(from: string, to: string): Promise<ExchangeRate> {
+  //   try {
+  //     const { data } = await firstValueFrom(
+  //       this.httpService.get(
+  //         `${apiUrl}/latest.json?app_id=${API_KEY}&base=${from}&symbols=${to}`,
+  //       ),
+  //     );
 
-      if (!data.rates || !data.rates[to]) {
-        throw new InvalidCurrencyDataError();
-      }
+  //     if (!data.rates || !data.rates[to]) {
+  //       throw new InvalidCurrencyDataError();
+  //     }
 
-      const rateData = {
-        fromCurrency: from,
-        toCurrency: to,
-        rate: data.rates[to],
-        lastUpdated: new Date(data.timestamp * 1000).toISOString(),
-        bid: data.rates[to],
-        ask: data.rates[to],
-      };
+  //     const rateData = {
+  //       fromCurrency: from,
+  //       toCurrency: to,
+  //       rate: data.rates[to],
+  //       lastUpdated: new Date(data.timestamp * 1000).toISOString(),
+  //       bid: data.rates[to],
+  //       ask: data.rates[to],
+  //     };
 
-      const validated = ExchangeRateSchema.safeParse(rateData);
-      if (!validated.success) {
-        throw new InvalidCurrencyDataError();
-      }
+  //     const validated = ExchangeRateSchema.safeParse(rateData);
+  //     if (!validated.success) {
+  //       throw new InvalidCurrencyDataError();
+  //     }
 
-      return validated.data;
-    } catch (error) {
-      if (error instanceof InvalidCurrencyDataError) {
-        throw error;
-      }
-      throw new Error('Failed to fetch exchange rates');
-    }
-  }
+  //     return validated.data;
+  //   } catch (error) {
+  //     if (error instanceof InvalidCurrencyDataError) {
+  //       throw error;
+  //     }
+  //     throw new Error('Failed to fetch exchange rates');
+  //   }
+  // }
 
-  //For scheduler, don't throw errors
   async getCurrencyRate(fromCurrencyCode: string, toCurrencyCode: string) {
     try {
       const { data } = await firstValueFrom(
@@ -362,8 +325,6 @@ export class CurrenciesService implements OnModuleInit {
         this.logger.error(
           `Failed to get rate for ${fromCurrencyCode}/${toCurrencyCode}`,
         );
-
-        // throw new InvalidCurrencyDataError();
       }
 
       return data.rates[toCurrencyCode];
@@ -384,12 +345,12 @@ export class CurrenciesService implements OnModuleInit {
             some: { isEnabled: true },
           },
         },
-        include: {
-          fromCurrency: true,
-          toCurrency: true,
-        },
+        // include: {
+        //   fromCurrency: true,
+        //   toCurrency: true,
+        // },
       });
-
+      console.log(pairs, 'PAIRS');
       return pairs;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {

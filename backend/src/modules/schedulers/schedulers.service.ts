@@ -41,7 +41,6 @@ export class SchedulerService {
     try {
       const subscribedPairs =
         await this.currenciesService.getAllSubscribedCurrencyPairs();
-      console.log(subscribedPairs, 'subscribed pairs');
       for (const pair of subscribedPairs) {
         const rate = await this.currenciesService.getCurrencyRate(
           pair.fromCode,
@@ -118,80 +117,6 @@ export class SchedulerService {
       );
     }
   }
-
-  // private async checkActiveRules() {
-  //   try {
-  //     const activeRules = await this.RulesService.getAllActiveRules();
-  //     console.log(activeRules, 'active rules');
-
-  //     for (const rule of activeRules) {
-  //       console.log('rule', rule);
-  //       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  //       const rate = await this.currenciesService.getCurrencyRate(
-  //         rule.currencyPair.fromCode,
-  //         rule.currencyPair.toCode,
-  //       );
-
-  //       await this.prisma.currencyRateHistory.create({
-  //         data: {
-  //           currencyPair: { connect: { id: rule.pairId } },
-  //           rate,
-  //         },
-  //       });
-
-  //       // this.rateChangesGauge.set(
-  //       //   {
-  //       //     pair: `${rule.currencyPair.fromCode}/${rule.currencyPair.toCode}`,
-  //       //   },
-  //       //   rate,
-  //       // );
-
-  //       const previousRate = await this.getPreviousRate(
-  //         rule.pairId,
-  //         rule.currencyPair.fromCode,
-  //         rule.currencyPair.toCode,
-  //       );
-
-  //       for (const userOnRule of rule.users) {
-  //         const isSatisfied = await this.checkRuleSatisfaction(
-  //           rate,
-  //           previousRate,
-  //           rule.percentage,
-  //           rule.trendDirection,
-  //           rule.pairId,
-  //         );
-
-  //         console.log(
-  //           rate,
-  //           `${rule.currencyPair.fromCode}/${rule.currencyPair.toCode}, ${userOnRule.user.email}`,
-  //         );
-  //         console.log('isSatisfied', isSatisfied);
-  //         if (isSatisfied) {
-  //           this.satisfiedRulesCounter.inc({
-  //             pair: `${rule.currencyPair.fromCode}/${rule.currencyPair.toCode}`,
-  //             direction: rule.trendDirection,
-  //           });
-  //           //Email sending logic
-  //           const emailSent = await this.emailService.sendRuleNotification(
-  //             userOnRule.user.email,
-  //             rule.currencyPair.fromCode,
-  //             rule.currencyPair.toCode,
-  //             rate,
-  //             rule.percentage,
-  //             rule.trendDirection,
-  //           );
-  //           if (emailSent) {
-  //             this.emailsSentCounter.inc();
-  //           }
-  //         }
-  //       }
-  //     }
-  //   } catch (error) {
-  //     this.logger.error(
-  //       `Failed to fetch active rules: ${(error as Error).message}`,
-  //     );
-  //   }
-  // }
 
   private async checkRuleSatisfaction(
     currentRate: number,
@@ -283,11 +208,12 @@ export class SchedulerService {
           skip: 1,
         });
 
-      console.log('previousRateRecord', previousRateRecord);
-      // this.logger.debug(
-      //   'Previous rate record from database:',
-      //   previousRateRecord.rate,
-      // );
+      if (previousRateRecord) {
+        this.logger.debug(
+          'Previous rate record from database:',
+          previousRateRecord.rate,
+        );
+      }
       return previousRateRecord?.rate ?? null;
     } catch (error) {
       this.logger.error(

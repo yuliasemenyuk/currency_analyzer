@@ -20,6 +20,8 @@ import {
   CreateRuleServiceSchema,
   RuleToggleServiceSchema,
   RuleArchiveServiceSchema,
+  // ActiveRule,
+  RuleListResponse,
   // RuleListResponse,
 } from './rules.schema';
 import {
@@ -31,6 +33,7 @@ import {
 } from './rules.errors';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { User } from '../../common/decorators/user.decorator';
+import { Rule } from '@prisma/client';
 // import { z } from 'zod';
 
 @Controller('rules')
@@ -39,8 +42,11 @@ export class RulesController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  async getUsersRules(@User() user): Promise<any> {
+  async getUsersRules(
+    @User() user: { id: string },
+  ): Promise<RuleListResponse[]> {
     try {
+      console.log('rules', await this.rulesService.getAllUsersRules(user.id));
       return await this.rulesService.getAllUsersRules(user.id);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
@@ -50,10 +56,13 @@ export class RulesController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  async addRule(@User() user, @Body() body: unknown) {
+  async addRule(
+    @User() user: { id: string },
+    @Body() body: unknown,
+  ): Promise<Rule> {
     const validated = CreateRuleRequestSchema.safeParse(body);
     if (!validated.success) {
-      throw new BadRequestException(validated.error.errors);
+      throw new BadRequestException(validated.error.errors[0].message);
     }
 
     const serviceData = CreateRuleServiceSchema.parse({
@@ -78,10 +87,10 @@ export class RulesController {
   @UseGuards(JwtAuthGuard)
   @Patch(':ruleId/toggle')
   async toggleSubscription(
-    @User() user,
+    @User() user: { id: string },
     @Param('ruleId') ruleId: string,
     @Body() body: unknown,
-  ) {
+  ): Promise<{ message: string }> {
     const validated = RuleToggleRequestSchema.safeParse(body);
     if (!validated.success) {
       throw new BadRequestException(validated.error.errors);
@@ -111,7 +120,10 @@ export class RulesController {
 
   @UseGuards(JwtAuthGuard)
   @Delete(':ruleId')
-  async removeRule(@User() user, @Param('ruleId') ruleId: string) {
+  async removeRule(
+    @User() user,
+    @Param('ruleId') ruleId: string,
+  ): Promise<{ message: string }> {
     const serviceData = RuleArchiveServiceSchema.safeParse({
       userId: user.id,
       ruleId,
@@ -134,14 +146,17 @@ export class RulesController {
 
   @UseGuards(JwtAuthGuard)
   @Patch(':ruleId/restore')
-  async restoreRule(@User() user, @Param('ruleId') ruleId: string) {
+  async restoreRule(
+    @User() user: { id: string },
+    @Param('ruleId') ruleId: string,
+  ): Promise<{ message: string }> {
     const serviceData = RuleArchiveServiceSchema.safeParse({
       userId: user.id,
       ruleId,
     });
 
     if (!serviceData.success) {
-      throw new BadRequestException('Invalid rule data');
+      throw new BadRequestException('Invalid rule or user data');
     }
 
     try {
@@ -160,8 +175,9 @@ export class RulesController {
 
   @UseGuards(JwtAuthGuard)
   @Get('archived')
-  async getArchivedRules(@User() user) {
-    // : Promise<RuleListResponse[]>
+  async getArchivedRules(
+    @User() user: { id: string },
+  ): Promise<RuleListResponse[]> {
     try {
       return await this.rulesService.getArchivedRules(user.id);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
