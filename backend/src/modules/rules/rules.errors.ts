@@ -30,12 +30,6 @@ export class SameCurrencyRuleError extends Error {
   }
 }
 
-// export class RuleNotEnabledError extends Error {
-//   constructor(ruleId: string) {
-//     super(`Rule ${ruleId} is not enabled`);
-//   }
-// }
-
 export class PairNotFoundError extends Error {
   constructor(pairId: string) {
     super(`Pair ${pairId} not found`);
@@ -44,7 +38,6 @@ export class PairNotFoundError extends Error {
 
 export class RuleAlreadySubscribedError extends Error {
   constructor() {
-    // userId: string, ruleId: string
     super(`User is already subscribed to this rule`);
   }
 }

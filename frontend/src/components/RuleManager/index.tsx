@@ -13,7 +13,6 @@ import { MonitoredPairsList } from "../MonitoredPairsList";
 import { RulesList } from "../RulesList";
 import { RuleConfigurator } from "../RuleConfigurator";
 import { ArchivedRulesList } from "../ArchivedRulesList";
-// import { Loader } from "../Loader";
 import {
   createRule,
   getUsersRules,
@@ -34,59 +33,42 @@ export function RulesManager() {
   const [editMode, setEditMode] = useState<{ [key: string]: boolean }>({});
   const [editedRule, setEditedRule] = useState<Partial<Rule>>({});
   const [showArchived, setShowArchived] = useState(false);
-  // const [loading, setLoading] = useState(false);
 
   const fetchCurrencies = async () => {
-    // setLoading(true);
     try {
       const { data } = await getCurrencies();
       setCurrencies(data);
     } catch (err) {
       toast.error("Failed to fetch currencies");
-      console.error(err);
-    // } finally {
-    //   setLoading(false);
     }
   };
 
   const fetchMonitoredPairs = async () => {
-    // setLoading(true);
     try {
       const { data } = await getMonitoredPairs();
       setMonitoredPairs(data);
     } catch (err) {
       toast.error("Failed to fetch monitored pairs");
-      console.error(err);
-    // } finally {
-    //   setLoading(false);
     }
   };
 
   const fetchRules = async () => {
-    // setLoading(true);
     try {
       const { data } = await getUsersRules();
       const validatedRules = z.array(RuleSchema).parse(data);
       setRules(validatedRules);
     } catch (err) {
       toast.error("Failed to fetch rules");
-      console.error(err);
-    // } finally {
-    //   setLoading(false);
     }
   };
 
   const fetchArchivedRules = async () => {
-    // setLoading(true);
     try {
       const { data } = await getArchivedRules();
       const validatedRules = z.array(RuleSchema).parse(data);
       setArchivedRules(validatedRules);
     } catch (err) {
       toast.error("Failed to fetch archived rules");
-      console.error(err);
-    // } finally {
-    //   setLoading(false);
     }
   };
 
@@ -105,8 +87,6 @@ export function RulesManager() {
     } catch (err) {
       const error = err as { response: { data: { message: string } } };
       toast.error(error.response.data.message || "Failed to add monitored pair");
-      // toast.error("Failed to add monitored pair");
-      console.error(err);
     }
   };
 
@@ -120,7 +100,6 @@ export function RulesManager() {
       await fetchMonitoredPairs();
     } catch (err) {
       toast.error("Failed to update monitored pair status");
-      console.error(err);
     }
   };
 
@@ -131,7 +110,6 @@ export function RulesManager() {
     } catch (err) {
       const error = err as { response: { data: { message: string } } };
       toast.error(error.response.data.message || "Failed to update rule subscription status");
-      console.error(err);
     }
   };
 
@@ -161,7 +139,6 @@ export function RulesManager() {
       } catch (err) {
         const error = err as { response: { data: { message: string } } };
         toast.error(error.response.data.message || "Failed to add rule");
-        console.error(err);
       }
     }
   };
@@ -174,7 +151,6 @@ export function RulesManager() {
       toast.success("Rule deleted successfully");
     } catch (err) {
       toast.error("Failed to delete rule");
-      console.error(err);
     }
   };
 
@@ -187,7 +163,6 @@ export function RulesManager() {
     } catch (err) {
       const error = err as { response: { data: { message: string } } };
       toast.error(error.response.data.message || "Failed to restore rule");
-      console.error(err);
     }
   };
 
@@ -197,21 +172,13 @@ export function RulesManager() {
       await fetchMonitoredPairs();
       await fetchRules();
       await fetchArchivedRules();
-      // const { data } = await getMonitoredPairs();
-      // const pairsWithIndex = data.map((pair, index) => ({ ...pair, index }));
-      // setMonitoredPairs(pairsWithIndex);
     } catch (err) {
       toast.error("Failed to delete monitored pair");
-      console.error(err);
     }
   };
 
   return (
     <div className="rules-manager">
-      {/* {loading ? (
-        <Loader />
-      ) : ( */}
-        {/* <> */}
           <CurrencyPairsConfigurator
             currencies={currencies}
             monitoredPairs={monitoredPairs}
@@ -252,8 +219,6 @@ export function RulesManager() {
           {showArchived && archivedRules.length === 0 && (
             <div className="no-archived-rules">No archived rules</div>
           )}
-        {/* </> */}
-      {/* )} */}
     </div>
   );
 }

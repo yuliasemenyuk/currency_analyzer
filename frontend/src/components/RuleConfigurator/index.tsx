@@ -30,7 +30,7 @@ export function RuleConfigurator({ monitoredPairs, onRuleAdded }: RuleConfigurat
       toast.success('Rule added successfully');
     } catch (err) {
       const error = err as { response: { data: { message: string } } };
-      toast.error(error.response.data.message);
+      toast.error(error.response.data.message || 'Failed to add rule');
     }
   };
 

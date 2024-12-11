@@ -35,7 +35,6 @@ export function CurrencyPairsConfigurator({
     } catch (err) {
       const error = err as { response: { data: { message: string } } };
       toast.error(error.response.data.message || "Failed to add currency pair.");
-      console.error(err);
     }
   };
 

@@ -16,10 +16,7 @@ export class UsersService {
 
       return user;
     } catch (error) {
-      // if (error instanceof UserNotFoundError) {
       throw error;
-      // }
-      // throw new Error('Failed to fetch user');
     }
   }
 
@@ -40,11 +37,7 @@ export class UsersService {
         },
       });
     } catch (error) {
-      console.log(error);
-      // if (error instanceof DuplicateUserError) {
       throw error;
-      // }
-      // throw new Error('Failed to create user');
     }
   }
 
@@ -64,10 +57,7 @@ export class UsersService {
 
       return user;
     } catch (error) {
-      // if (error instanceof UnauthorizedException) {
       throw error;
-      // }
-      // throw new Error('Failed to validate user');
     }
   }
 }

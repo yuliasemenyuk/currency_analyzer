@@ -6,7 +6,6 @@ import {
   Post,
   Patch,
   Delete,
-  // Query,
   UseGuards,
   BadRequestException,
   NotFoundException,
@@ -17,7 +16,6 @@ import { CurrenciesService } from './currencies.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
   Currency,
-  // RateQuerySchema,
   MonitoringPairRequestSchema,
   ToggleMonitorRequestSchema,
   MonitoringPairServiceSchema,
@@ -31,8 +29,6 @@ import {
   InvalidCurrencyDataError,
   SameCurrencyError,
 } from './currencies.errors';
-// import { CurrencyPair } from '@prisma/client';
-// import z from 'zod';
 
 @Controller('currencies')
 export class CurrenciesController {
@@ -82,7 +78,6 @@ export class CurrenciesController {
     try {
       await this.currenciesService.startMonitoringPair(serviceData);
     } catch (error) {
-      console.log('error', error);
       if (error instanceof SameCurrencyError) {
         throw new BadRequestException((error as Error).message);
       }
@@ -147,7 +142,6 @@ export class CurrenciesController {
     try {
       return await this.currenciesService.deleteMonitoredPair(user.id, pairId);
     } catch (error) {
-      console.log('error', error);
       if (error instanceof PairNotFoundError) {
         throw new NotFoundException(error.message);
       }

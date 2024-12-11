@@ -18,10 +18,6 @@ export class SchedulerService {
     private readonly currenciesService: CurrenciesService,
     private readonly RulesService: RulesService,
     private prisma: PrismaService,
-    // @InjectMetric('scheduler_cron_executions_total')
-    // private readonly cronExecutionsCounter: Counter<string>,
-    // @InjectMetric('scheduler_active_rules')
-    // private readonly activeRulesGauge: Gauge<string>,
     @InjectMetric('currency_rate_changes')
     private readonly rateChangesGauge: Gauge<string>,
     @InjectMetric('satisfied_rules_total')
@@ -34,7 +30,6 @@ export class SchedulerService {
   async handleCron() {
     console.log('Cron job running every 15 seconds');
     await this.fetchSubscribedCurrencyPairs();
-    // await this.checkActiveRules();
   }
 
   private async fetchSubscribedCurrencyPairs() {
@@ -85,11 +80,6 @@ export class SchedulerService {
               ruleToCheck.pairId,
             );
 
-            console.log(
-              rate,
-              `${ruleToCheck.currencyPair.fromCode}/${ruleToCheck.currencyPair.toCode}, ${userOnRule.user.email}`,
-            );
-
             if (isSatisfied) {
               this.satisfiedRulesCounter.inc({
                 pair: `${ruleToCheck.currencyPair.fromCode}/${ruleToCheck.currencyPair.toCode}`,
@@ -126,7 +116,6 @@ export class SchedulerService {
     pairId: string,
   ): Promise<boolean> {
     try {
-      // const previousRate = await this.getPreviousRate(pairId);
       if (!previousRate) {
         this.logger.warn(`No previous rate found for pair ${pairId}`);
         return false;
@@ -232,22 +221,4 @@ export class SchedulerService {
     await this.redis.set(cacheKey, rate.toString(), 'EX', 60);
     this.logger.log(`Cached current rate for ${cacheKey}: ${rate}`);
   }
-
-  // async getPreviousRate(pairId: string): Promise<number | null> {
-  //   try {
-  //     const previousRateRecord =
-  //       await this.prisma.currencyRateHistory.findFirst({
-  //         where: { pairId },
-  //         orderBy: { timestamp: 'desc' },
-  //         skip: 1,
-  //       });
-
-  //     this.logger.debug('Previous rate record:', previousRateRecord);
-  //     return previousRateRecord?.rate ?? null;
-  //   } catch (error) {
-  //     this.logger.error(
-  //       `Failed to get previous rate for pair ${pairId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-  //     );
-  //   }
-  // }
 }

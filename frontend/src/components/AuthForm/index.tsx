@@ -33,7 +33,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
       }
     } catch (err) {
       const error = err as { response: { data: { message: string } } };
-      toast.error(error.response.data.message);
+      toast.error(error.response.data.message || "Failed to authenticate");
     } finally {
       setLoading(false);
     }

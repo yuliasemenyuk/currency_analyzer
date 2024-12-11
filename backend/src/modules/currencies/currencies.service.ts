@@ -4,8 +4,6 @@ import {
   CurrencySchema,
   MonitoredPairResponse,
   CurrenciesResponseSchema,
-  // ExchangeRateSchema,
-  // ExchangeRate,
   MonitoringPairServiceDto,
   ToggleMonitorServiceDto,
   CurrencyPair,
@@ -13,7 +11,6 @@ import {
 import { PrismaService } from 'prisma/prisma.service';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-// import { CurrencyPair } from '@prisma/client';
 import {
   InvalidCurrencyDataError,
   DuplicatePairError,
@@ -103,10 +100,7 @@ export class CurrenciesService implements OnModuleInit {
         }
       });
     } catch (error) {
-      // if (error instanceof InvalidCurrencyDataError) {
       throw error;
-      // }
-      // throw new Error('Failed to fetch currencies');
     }
   }
 
@@ -124,8 +118,6 @@ export class CurrenciesService implements OnModuleInit {
           },
         },
       });
-
-      console.log(pairs, 'PAIRS');
 
       return pairs.map(({ users, ...rest }) => ({
         ...rest,
@@ -169,14 +161,7 @@ export class CurrenciesService implements OnModuleInit {
         },
       });
     } catch (error) {
-      console.log(error, 'error');
-      // if (
-      //   error instanceof SameCurrencyError ||
-      //   error instanceof DuplicatePairError
-      // ) {
       throw error;
-      //   }
-      //   throw new Error('Failed to start monitoring pair');
     }
   }
 
@@ -203,10 +188,7 @@ export class CurrenciesService implements OnModuleInit {
         },
       });
     } catch (error) {
-      // if (error instanceof PairNotFoundError) {
       throw error;
-      //   }
-      //   throw new Error('Failed to disable pair monitoring');
     }
   }
 
@@ -233,10 +215,7 @@ export class CurrenciesService implements OnModuleInit {
         },
       });
     } catch (error) {
-      // if (error instanceof PairNotFoundError) {
       throw error;
-      // }
-      // throw new Error('Failed to enable pair monitoring');
     }
   }
 
@@ -269,11 +248,7 @@ export class CurrenciesService implements OnModuleInit {
         },
       });
     } catch (error) {
-      console.log(error);
-      // if (error instanceof PairNotFoundError) {
       throw error;
-      //   }
-      //   throw new Error('Failed to delete monitored pair');
     }
   }
 
@@ -308,10 +283,6 @@ export class CurrenciesService implements OnModuleInit {
             some: { isEnabled: true },
           },
         },
-        // include: {
-        //   fromCurrency: true,
-        //   toCurrency: true,
-        // },
       });
       return pairs;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars

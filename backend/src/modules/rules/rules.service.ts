@@ -6,7 +6,6 @@ import {
   CreateRuleServiceDto,
   RuleToggleServiceDto,
   RuleArchiveServiceDto,
-  // ActiveRule,
   RuleListResponse,
 } from './rules.schema';
 import {
@@ -123,13 +122,7 @@ export class RulesService {
 
       return rule;
     } catch (error) {
-      // if (
-      //   error instanceof PairNotFoundError ||
-      //   error instanceof MaxRulesReachedError
-      // ) {
       throw error;
-      // }
-      // throw new Error('Failed to create rule');
     }
   }
 
@@ -219,16 +212,6 @@ export class RulesService {
       return newRule;
     } catch (error) {
       throw error;
-      //   if (
-      //     error instanceof SameCurrencyRuleError ||
-      //     error instanceof PairNotFoundError ||
-      //     error instanceof MaxRulesReachedError ||
-      //     error instanceof RuleAlreadySubscribedError ||
-      //     error instanceof RuleNotFoundError
-      //   ) {
-      //     throw error;
-      //   }
-      //   throw new Error('Failed to handle rule subscription');
     }
   }
 
@@ -253,7 +236,6 @@ export class RulesService {
       });
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      console.log(error);
       if (error instanceof MaxRulesReachedError) {
         throw error;
       }
@@ -276,13 +258,8 @@ export class RulesService {
           isEnabled: false,
         },
       });
-
-      // return rule;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      // if (error instanceof MaxRulesReachedError) {
-      //   throw error;
-      // }
       throw error;
     }
   }
@@ -322,10 +299,7 @@ export class RulesService {
         },
         data: { isArchived: false, isEnabled: true },
       });
-
-      // return rule;
     } catch (error) {
-      console.log(error);
       throw error;
     }
   }
@@ -358,16 +332,12 @@ export class RulesService {
           return ActiveRuleSchema.parse(rule);
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
-          console.log(error);
           throw new InvalidRuleDataError();
         }
       });
     } catch (error) {
-      // if (error instanceof InvalidRuleDataError) {
       throw error;
     }
-    // throw new Error('Failed to fetch active rules');
-    // }
   }
 
   async getArchivedRules(userId: string): Promise<RuleListResponse[]> {
@@ -380,7 +350,6 @@ export class RulesService {
           currencyPair: true,
           users: {
             where: { userId },
-            // select: { isEnabled: true },
           },
         },
       });

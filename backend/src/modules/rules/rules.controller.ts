@@ -4,7 +4,6 @@ import {
   Body,
   Patch,
   Param,
-  // Query,
   Get,
   Delete,
   UseGuards,
@@ -20,13 +19,10 @@ import {
   CreateRuleServiceSchema,
   RuleToggleServiceSchema,
   RuleArchiveServiceSchema,
-  // ActiveRule,
   RuleListResponse,
-  // RuleListResponse,
 } from './rules.schema';
 import {
   MaxRulesReachedError,
-  // SameCurrencyRuleError,
   RuleSubscriptionError,
   RuleNotFoundError,
   RuleAlreadySubscribedError,
@@ -34,7 +30,6 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { User } from '../../common/decorators/user.decorator';
 import { Rule } from '@prisma/client';
-// import { z } from 'zod';
 
 @Controller('rules')
 export class RulesController {
@@ -46,7 +41,6 @@ export class RulesController {
     @User() user: { id: string },
   ): Promise<RuleListResponse[]> {
     try {
-      console.log('rules', await this.rulesService.getAllUsersRules(user.id));
       return await this.rulesService.getAllUsersRules(user.id);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
