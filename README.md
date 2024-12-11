@@ -2,7 +2,7 @@ Instructions:
 
 - clone git repository
 
-- create .env files for frontend and backend
+- create .env files for frontend, backend and root
 
 - run command "docker compose up -d" in the project root folder
 

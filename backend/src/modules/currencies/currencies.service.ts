@@ -285,6 +285,7 @@ export class CurrenciesService implements OnModuleInit {
         },
       });
       return pairs;
+      
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       throw new Error('Failed to fetch subscribed currency pairs');
