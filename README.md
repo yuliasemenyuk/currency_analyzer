@@ -6,7 +6,7 @@ Instructions:
 
 - run command "docker compose up -d" in the project root folder
 
-Frontend - http://localhost:3001 (please don't use http://127.0.0.1:3001 instead, it may cause CORS issue)
+Frontend - http://localhost:3001 
 
 Grafana - http://localhost:3002
 
