@@ -53,6 +53,13 @@ services:
       - .env
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "pos"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s  
+
 
   redis:
     image: redis:latest
@@ -91,6 +98,6 @@ services:
       - .env
     depends_on:
       pg:
-        condition: service_started
+        condition: service_healthy
 volumes:
   db_data:
