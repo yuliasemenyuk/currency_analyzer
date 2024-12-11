@@ -61,25 +61,30 @@ export class CurrenciesService implements OnModuleInit {
           code,
           name,
         })),
-        skipDuplicates: true, // Avoids errors if the record already exists
+        skipDuplicates: true,
       });
 
       // const existingPairs = await this.prisma.currencyPair.findMany();
       // if (existingPairs.length === 0) {
-      //   for (const fromCode of currencyCodes) {
-      //     for (const toCode of currencyCodes) {
-      //       if (fromCode !== toCode) {
-      //         await this.prisma.currencyPair.create({
-      //           data: {
-      //             fromCode,
-      //             toCode,
-      //           },
-      //         });
-      //       }
-      //     }
-      //   }
-      // } else {
-      //   await this.updatePairs(currencyCodes);
+      function generatePairs(
+        array1: string[],
+        array2: string[],
+      ): { fromCode: string; toCode: string }[] {
+        const pairs = [];
+        for (const fromCode of array1) {
+          for (const toCode of array2) {
+            if (fromCode !== toCode) {
+              pairs.push({ fromCode, toCode });
+            }
+          }
+        }
+        return pairs;
+      }
+      const pairsToCreate = generatePairs(currencyCodes, currencyCodes);
+      await this.prisma.currencyPair.createMany({
+        data: pairsToCreate,
+        skipDuplicates: true,
+      });
       // }
     } catch (error) {
       if (error instanceof InvalidCurrencyDataError) {
@@ -96,27 +101,27 @@ export class CurrenciesService implements OnModuleInit {
     }
   }
 
-  private async updatePairs(currencyCodes: string[]) {
-    try {
-      for (const fromCode of currencyCodes) {
-        for (const toCode of currencyCodes) {
-          if (fromCode !== toCode) {
-            await this.prisma.currencyPair.upsert({
-              where: { fromCode_toCode: { fromCode, toCode } },
-              update: {},
-              create: {
-                fromCode,
-                toCode,
-              },
-            });
-          }
-        }
-      }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      throw new Error('Failed to update currency pairs');
-    }
-  }
+  // private async updatePairs(currencyCodes: string[]) {
+  //   try {
+  //     for (const fromCode of currencyCodes) {
+  //       for (const toCode of currencyCodes) {
+  //         if (fromCode !== toCode) {
+  //           await this.prisma.currencyPair.upsert({
+  //             where: { fromCode_toCode: { fromCode, toCode } },
+  //             update: {},
+  //             create: {
+  //               fromCode,
+  //               toCode,
+  //             },
+  //           });
+  //         }
+  //       }
+  //     }
+  //     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  //   } catch (error) {
+  //     throw new Error('Failed to update currency pairs');
+  //   }
+  // }
 
   async findAll(): Promise<Currency[]> {
     try {
@@ -180,10 +185,6 @@ export class CurrenciesService implements OnModuleInit {
         where: { fromCode, toCode },
       });
 
-      if (!pair) {
-        throw new PairNotFoundError(`${fromCode}/${toCode}`);
-      }
-
       const existingSubscription = await this.prisma.UsersOnPairs.findUnique({
         where: {
           userId_pairId: {
@@ -205,9 +206,9 @@ export class CurrenciesService implements OnModuleInit {
         },
       });
     } catch (error) {
+      console.log(error, 'error');
       if (
         error instanceof SameCurrencyError ||
-        error instanceof PairNotFoundError ||
         error instanceof DuplicatePairError
       ) {
         throw error;
@@ -278,26 +279,37 @@ export class CurrenciesService implements OnModuleInit {
 
   async deleteMonitoredPair(userId: string, pairId: string) {
     try {
-      const subscription = await this.prisma.UsersOnPairs.findUnique({
+      // const subscription = await this.prisma.UsersOnPairs.findUnique({
+      //   where: {
+      //     userId_pairId: { userId, pairId },
+      //   },
+      // });
+
+      // if (!subscription) {
+      //   throw new PairNotFoundError(pairId);
+      // }
+
+      await this.prisma.UsersOnPairs.delete({
         where: {
           userId_pairId: { userId, pairId },
         },
       });
 
-      if (!subscription) {
-        throw new PairNotFoundError(pairId);
-      }
-
-      return await this.prisma.UsersOnPairs.delete({
+      await this.prisma.usersOnRules.deleteMany({
         where: {
-          userId_pairId: { userId, pairId },
+          userId,
+          rule: {
+            currencyPair: {
+              id: pairId,
+            },
+          },
         },
       });
     } catch (error) {
       console.log(error);
-      if (error instanceof PairNotFoundError) {
-        throw error;
-      }
+      // if (error instanceof PairNotFoundError) {
+      //   throw error;
+      // }
       throw new Error('Failed to delete monitored pair');
     }
   }

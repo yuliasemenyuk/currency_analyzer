@@ -174,6 +174,7 @@ export class RulesService {
       if (existingRule) {
         const existingSubscription = await this.prisma.usersOnRules.findUnique({
           where: {
+            isArchived: false,
             userId_ruleId: {
               userId,
               ruleId: existingRule.id,
@@ -184,31 +185,24 @@ export class RulesService {
         if (existingSubscription) {
           throw new RuleAlreadySubscribedError();
         }
-      }
 
-      const archivedRule = await this.prisma.rule.findFirst({
-        where: {
-          currencyPair: {
-            fromCode: fromCurrencyCode,
-            toCode: toCurrencyCode,
-          },
-          percentage,
-          trendDirection,
-          users: {
-            some: {
+        const archivedRule = await this.prisma.usersOnRules.findUnique({
+          where: {
+            isArchived: true,
+            userId_ruleId: {
               userId,
-              isArchived: true,
+              ruleId: existingRule.id,
             },
           },
-        },
-      });
-
-      if (archivedRule) {
-        await this.restoreRule({
-          userId,
-          ruleId: archivedRule.id,
         });
-        return archivedRule;
+
+        if (archivedRule) {
+          await this.restoreRule({
+            userId,
+            ruleId: existingRule.id,
+          });
+          return existingRule;
+        }
       }
 
       let newRule;
@@ -336,6 +330,7 @@ export class RulesService {
 
       return rule;
     } catch (error) {
+      console.log(error);
       if (error instanceof MaxRulesReachedError) {
         throw error;
       }
@@ -347,9 +342,9 @@ export class RulesService {
     try {
       const activeRules = await this.prisma.rule.findMany({
         where: {
-          isEnabled: true,
           users: {
             some: {
+              isEnabled: true,
               isArchived: false,
             },
           },

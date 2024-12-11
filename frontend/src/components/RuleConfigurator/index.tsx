@@ -55,7 +55,7 @@ export function RuleConfigurator({ monitoredPairs, onRuleAdded }: RuleConfigurat
           type="number"
           className="percentage-input"
           placeholder="Change %"
-          min="0"
+          min="1"
           max="100"
           value={percentage}
           onChange={e => {

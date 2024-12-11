@@ -96,11 +96,9 @@ export class CurrenciesController {
     try {
       return await this.currenciesService.startMonitoringPair(serviceData);
     } catch (error) {
+      console.log('error', error);
       if (error instanceof SameCurrencyError) {
         throw new BadRequestException((error as Error).message);
-      }
-      if (error instanceof PairNotFoundError) {
-        throw new NotFoundException((error as Error).message);
       }
       if (error instanceof DuplicatePairError) {
         throw new ConflictException((error as Error).message);

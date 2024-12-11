@@ -34,166 +34,168 @@ export class SchedulerService {
   async handleCron() {
     console.log('Cron job running every 15 seconds');
     await this.fetchSubscribedCurrencyPairs();
-    await this.checkActiveRules();
+    // await this.checkActiveRules();
   }
 
   private async fetchSubscribedCurrencyPairs() {
     try {
       const subscribedPairs =
         await this.currenciesService.getAllSubscribedCurrencyPairs();
-
-      subscribedPairs.forEach((pair) => {
-        this.logger.log(`Subscribed pair: ${pair.fromCode}/${pair.toCode}`);
-      });
-    } catch (error) {
-      this.logger.error(
-        `Failed to fetch subscribed currency pairs: ${(error as Error).message}`,
-      );
-    }
-  }
-
-  private async checkActiveRules() {
-    try {
-      const activeRules = await this.RulesService.getAllActiveRules();
-      console.log(activeRules, 'active rules');
-
-      for (const rule of activeRules) {
-        console.log('rule', rule);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      console.log(subscribedPairs, 'subscribed pairs');
+      for (const pair of subscribedPairs) {
         const rate = await this.currenciesService.getCurrencyRate(
-          rule.currencyPair.fromCode,
-          rule.currencyPair.toCode,
+          pair.fromCode,
+          pair.toCode,
         );
-
-        await this.prisma.currencyRateHistory.create({
-          data: {
-            currencyPair: { connect: { id: rule.pairId } },
-            rate,
-          },
-        });
 
         this.rateChangesGauge.set(
           {
-            pair: `${rule.currencyPair.fromCode}/${rule.currencyPair.toCode}`,
+            pair: `${pair.fromCode}/${pair.toCode}`,
           },
           rate,
         );
 
+        await this.prisma.currencyRateHistory.create({
+          data: {
+            currencyPair: { connect: { id: pair.id } },
+            rate,
+          },
+        });
+
         const previousRate = await this.getPreviousRate(
-          rule.pairId,
-          rule.currencyPair.fromCode,
-          rule.currencyPair.toCode,
+          pair.id,
+          pair.fromCode,
+          pair.toCode,
         );
 
-        for (const userOnRule of rule.users) {
-          const isSatisfied = await this.checkRuleSatisfaction(
-            rate,
-            previousRate,
-            rule.percentage,
-            rule.trendDirection,
-            rule.pairId,
-          );
+        if (previousRate !== rate) {
+          await this.cacheCurrentRate(pair.fromCode, pair.toCode, rate);
+        }
 
-          console.log(
-            rate,
-            `${rule.currencyPair.fromCode}/${rule.currencyPair.toCode}, ${userOnRule.user.email}`,
-          );
-          console.log('isSatisfied', isSatisfied);
-          if (isSatisfied) {
-            this.satisfiedRulesCounter.inc({
-              pair: `${rule.currencyPair.fromCode}/${rule.currencyPair.toCode}`,
-              direction: rule.trendDirection,
-            });
-            //Email sending logic
-            const emailSent = await this.emailService.sendRuleNotification(
-              userOnRule.user.email,
-              rule.currencyPair.fromCode,
-              rule.currencyPair.toCode,
+        const activeRules = await this.RulesService.getAllActiveRules();
+        const ruleToCheck = activeRules.find(
+          (rule) => rule.currencyPair.id === pair.id,
+        );
+        if (ruleToCheck) {
+          for (const userOnRule of ruleToCheck.users) {
+            const isSatisfied = await this.checkRuleSatisfaction(
               rate,
-              rule.percentage,
-              rule.trendDirection,
+              previousRate,
+              ruleToCheck.percentage,
+              ruleToCheck.trendDirection,
+              ruleToCheck.pairId,
             );
-            if (emailSent) {
-              this.emailsSentCounter.inc();
+
+            console.log(
+              rate,
+              `${ruleToCheck.currencyPair.fromCode}/${ruleToCheck.currencyPair.toCode}, ${userOnRule.user.email}`,
+            );
+
+            if (isSatisfied) {
+              this.satisfiedRulesCounter.inc({
+                pair: `${ruleToCheck.currencyPair.fromCode}/${ruleToCheck.currencyPair.toCode}`,
+                direction: ruleToCheck.trendDirection,
+              });
+              //Email sending logic
+              const emailSent = await this.emailService.sendRuleNotification(
+                userOnRule.user.email,
+                ruleToCheck.currencyPair.fromCode,
+                ruleToCheck.currencyPair.toCode,
+                rate,
+                ruleToCheck.percentage,
+                ruleToCheck.trendDirection,
+              );
+              if (emailSent) {
+                this.emailsSentCounter.inc();
+              }
             }
           }
         }
       }
-      //   try {
-      //     const cacheKey = `currency_rate_${rule.currencyPair.fromCode}_${rule.currencyPair.toCode}`;
-
-      //     try {
-      //       const cachedRate = await this.redis.get(cacheKey);
-      //       const rate = await this.currenciesService.getCurrencyRate(
-      //         rule.currencyPair.fromCode,
-      //         rule.currencyPair.toCode,
-      //       );
-
-      //       if (cachedRate && rate.toString() === cachedRate) {
-      //         this.logger.log(
-      //           `Using cached rate for ${cacheKey}: ${cachedRate}`,
-      //         );
-      //       } else {
-      //         await this.redis.set(cacheKey, rate.toString(), 'EX', 600);
-      //         this.logger.log(`Fetched new rate for ${cacheKey}: ${rate}`);
-      //       }
-
-      //       await this.prisma.currencyRateHistory.create({
-      //         data: {
-      //           currencyPair: { connect: { id: rule.pairId } },
-      //           rate,
-      //         },
-      //       });
-
-      //       for (const userOnRule of rule.users) {
-      //         try {
-      //           const isSatisfied = await this.checkRuleSatisfaction(
-      //             rate,
-      //             rule.percentage,
-      //             rule.trendDirection,
-      //             rule.pairId,
-      //           );
-      //           this.logger.log(
-      //             `Currency pair: ${rule.currencyPair.fromCode} to ${rule.currencyPair.toCode}, Rate: ${rate}, Subscribed User: ${userOnRule.user.email}, Rule satisfied: ${isSatisfied}`,
-      //           );
-      //           if (isSatisfied) {
-      //             // Email
-      //           }
-      //         } catch (error) {
-      //           this.logger.error(
-      //             `Failed to check rule satisfaction: ${(error as Error).message}`,
-      //           );
-      //           continue;
-      //         }
-      //       }
-      //     } catch (error) {
-      //       this.logger.error(
-      //         `Failed to process rate for ${cacheKey}: ${(error as Error).message}`,
-      //       );
-      //       continue;
-      //     }
-      //   } catch (error) {
-      //     this.logger.error(
-      //       `Failed to process rule ${rule.id}: ${(error as Error).message}`,
-      //     );
-      //     continue;
-      //   }
-      // }
     } catch (error) {
       this.logger.error(
-        `Failed to fetch active rules: ${(error as Error).message}`,
+        `Failed to fetch subscribed currency pairs and rules: ${(error as Error).message}`,
       );
     }
   }
 
-  // private const cacheCurrentRate {
-  //   const cacheKey = `currency_rate_${rule.currencyPair.fromCode}_${rule.currencyPair.toCode}`;
-  //   console.log('cacheKey', cacheKey);
-  // };
+  // private async checkActiveRules() {
+  //   try {
+  //     const activeRules = await this.RulesService.getAllActiveRules();
+  //     console.log(activeRules, 'active rules');
+
+  //     for (const rule of activeRules) {
+  //       console.log('rule', rule);
+  //       // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  //       const rate = await this.currenciesService.getCurrencyRate(
+  //         rule.currencyPair.fromCode,
+  //         rule.currencyPair.toCode,
+  //       );
+
+  //       await this.prisma.currencyRateHistory.create({
+  //         data: {
+  //           currencyPair: { connect: { id: rule.pairId } },
+  //           rate,
+  //         },
+  //       });
+
+  //       // this.rateChangesGauge.set(
+  //       //   {
+  //       //     pair: `${rule.currencyPair.fromCode}/${rule.currencyPair.toCode}`,
+  //       //   },
+  //       //   rate,
+  //       // );
+
+  //       const previousRate = await this.getPreviousRate(
+  //         rule.pairId,
+  //         rule.currencyPair.fromCode,
+  //         rule.currencyPair.toCode,
+  //       );
+
+  //       for (const userOnRule of rule.users) {
+  //         const isSatisfied = await this.checkRuleSatisfaction(
+  //           rate,
+  //           previousRate,
+  //           rule.percentage,
+  //           rule.trendDirection,
+  //           rule.pairId,
+  //         );
+
+  //         console.log(
+  //           rate,
+  //           `${rule.currencyPair.fromCode}/${rule.currencyPair.toCode}, ${userOnRule.user.email}`,
+  //         );
+  //         console.log('isSatisfied', isSatisfied);
+  //         if (isSatisfied) {
+  //           this.satisfiedRulesCounter.inc({
+  //             pair: `${rule.currencyPair.fromCode}/${rule.currencyPair.toCode}`,
+  //             direction: rule.trendDirection,
+  //           });
+  //           //Email sending logic
+  //           const emailSent = await this.emailService.sendRuleNotification(
+  //             userOnRule.user.email,
+  //             rule.currencyPair.fromCode,
+  //             rule.currencyPair.toCode,
+  //             rate,
+  //             rule.percentage,
+  //             rule.trendDirection,
+  //           );
+  //           if (emailSent) {
+  //             this.emailsSentCounter.inc();
+  //           }
+  //         }
+  //       }
+  //     }
+  //   } catch (error) {
+  //     this.logger.error(
+  //       `Failed to fetch active rules: ${(error as Error).message}`,
+  //     );
+  //   }
+  // }
 
   private async checkRuleSatisfaction(
     currentRate: number,
-    previousRate: number,
+    previousRate: number | null,
     percentage: number,
     trendDirection: string,
     pairId: string,
@@ -205,22 +207,18 @@ export class SchedulerService {
         return false;
       }
 
-      this.logger.debug('Rate comparison:', {
-        currentRate,
-        previousRate,
-        trendDirection,
-        percentage,
-      });
+      this.logger
+        .debug(`Rate comparison: rule: ${currentRate}, previous rate: ${previousRate}, 
+        trend direction: ${trendDirection}, percentage: ${percentage}`);
 
       const percentageChange = Math.round(
         ((currentRate - previousRate) / previousRate) * 100,
       );
 
-      this.logger.debug('Change calculation:', {
-        percentageChange,
-        targetPercentage: percentage,
-        direction: trendDirection,
-      });
+      this.logger
+        .debug(`Change calculation: persecentageChange: ${percentageChange}, 
+        targetPercentage: ${percentage}, direction: ${trendDirection}
+      `);
 
       return trendDirection === 'increase'
         ? percentageChange >= percentage
@@ -248,7 +246,7 @@ export class SchedulerService {
       const databaseRate = await this.getPreviousRateFromDatabase(pairId);
 
       if (databaseRate !== null) {
-        // await this.cacheCurrentRate(fromCode, toCode, databaseRate);
+        await this.cacheCurrentRate(fromCode, toCode, databaseRate);
         this.logger.debug(
           'Retrieved previous rate from database and cached:',
           databaseRate,
@@ -269,7 +267,7 @@ export class SchedulerService {
     fromCode: string,
     toCode: string,
   ): Promise<number | null> {
-    const cacheKey = `previous_rate:${fromCode}:${toCode}`;
+    const cacheKey = `currency_rate_${fromCode}_${toCode}`;
     const cachedRate = await this.redis.get(cacheKey);
     return cachedRate ? parseFloat(cachedRate) : null;
   }
@@ -285,10 +283,11 @@ export class SchedulerService {
           skip: 1,
         });
 
-      this.logger.debug(
-        'Previous rate record from database:',
-        previousRateRecord,
-      );
+      console.log('previousRateRecord', previousRateRecord);
+      // this.logger.debug(
+      //   'Previous rate record from database:',
+      //   previousRateRecord.rate,
+      // );
       return previousRateRecord?.rate ?? null;
     } catch (error) {
       this.logger.error(
@@ -296,6 +295,16 @@ export class SchedulerService {
       );
       return null;
     }
+  }
+
+  private async cacheCurrentRate(
+    fromCode: string,
+    toCode: string,
+    rate: number,
+  ) {
+    const cacheKey = `currency_rate_${fromCode}_${toCode}`;
+    await this.redis.set(cacheKey, rate.toString(), 'EX', 60);
+    this.logger.log(`Cached current rate for ${cacheKey}: ${rate}`);
   }
 
   // async getPreviousRate(pairId: string): Promise<number | null> {

@@ -192,6 +192,8 @@ export function RulesManager() {
     try {
       await stopMonitoringPair(pairId);
       await fetchMonitoredPairs();
+      await fetchRules();
+      await fetchArchivedRules();
       // const { data } = await getMonitoredPairs();
       // const pairsWithIndex = data.map((pair, index) => ({ ...pair, index }));
       // setMonitoredPairs(pairsWithIndex);
