@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   admin_service:
-    build: ./backend # Вказує папку, в якій знаходиться Dockerfile
+    build: ./backend
     command:
       - dist/src/main
     env_file:
@@ -11,16 +11,16 @@ services:
       - POSTGRES_HOST=pg
       - REDIS_HOST=redis
     ports:
-      - "3000:3000" # Порт, на якому буде доступний сервіс
+      - "3000:3000"
     links:
-      - pg # Залежить від сервісу бази даних
-      - redis # Залежить від Redis
+      - pg
+      - redis
     depends_on:
       init-db:
           condition: service_completed_successfully
 
   collector_service:
-    build: ./backend # Вказує папку, в якій знаходиться Dockerfile
+    build: ./backend
     command:
       - dist/src/scheduler
     env_file:
@@ -29,53 +29,52 @@ services:
       - POSTGRES_HOST=pg
       - REDIS_HOST=redis
     links:
-      - pg # Залежить від сервісу бази даних
-      - redis # Залежить від Redis
+      - pg
+      - redis
     depends_on:
       init-db:
           condition: service_completed_successfully
 
   frontend_service:
-    build: ./frontend # Вказує папку, в якій знаходиться Dockerfile
+    build: ./frontend
     ports:
-      - "3001:3000" # Порт для фронтенду
+      - "3001:3000"
     environment:
       - WDS_SOCKET_PORT=0
     depends_on:
       - admin_service
 
   pg:
-    image: postgres:latest # Використовує останню версію PostgreSQL
+    image: postgres:latest
     restart: always
     ports:
       - "5432:5432"
     env_file:
       - .env
     volumes:
-      - db_data:/var/lib/postgresql/data # Постійне зберігання даних бази даних
+      - db_data:/var/lib/postgresql/data
 
   redis:
-    image: redis:latest # Використовує останню версію Redis
+    image: redis:latest
     restart: always
     ports:
       - "6379:6379"
 
   prometheus:
-    image: prom/prometheus:latest # Використовує останню версію Prometheus
+    image: prom/prometheus:latest
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml # Конфігураційний файл для Prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     links:
       - admin_service
       - collector_service
 
   grafana:
-    image: grafana/grafana:latest # Використовує останню версію Grafana
+    image: grafana/grafana:latest
     ports:
-      - "3002:3000" # Доступ до Grafana на порту 3002
+      - "3002:3000"
     volumes:
-      # - ./grafana/dashboards:/var/lib/grafana/dashboard
       - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/dashboards:/var/lib/grafana/dashboards
     links:
@@ -83,7 +82,7 @@ services:
       - pg
   
   init-db:
-    build: ./backend # Вказує папку, в якій знаходиться Dockerfile
+    build: ./backend
     entrypoint: /bin/bash -c "npx prisma migrate deploy"
     environment:
       - POSTGRES_HOST=pg
@@ -94,4 +93,4 @@ services:
       pg:
         condition: service_started
 volumes:
-  db_data: # Оголошення тому для зберігання даних бази даних
+  db_data:

@@ -103,7 +103,7 @@ export function RulesManager() {
     }
   };
 
-  const handleToggle = async (rule: Rule) => {
+  const handleRuleToggle = async (rule: Rule) => {
     try {
       await toggleRuleSubscription(rule.id, { isEnabled: !rule.isEnabled });
       await fetchRules();
@@ -197,7 +197,7 @@ export function RulesManager() {
             rules={rules}
             editMode={editMode}
             editedRule={editedRule}
-            onToggle={handleToggle}
+            onToggle={handleRuleToggle}
             onEdit={handleEdit}
             onSave={handleSave}
             onDelete={handleDeleteRule}
