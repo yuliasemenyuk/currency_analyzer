@@ -26,7 +26,7 @@ import {
 } from './rules.schema';
 import {
   MaxRulesReachedError,
-  SameCurrencyRuleError,
+  // SameCurrencyRuleError,
   RuleSubscriptionError,
   RuleNotFoundError,
   RuleAlreadySubscribedError,
@@ -75,10 +75,11 @@ export class RulesController {
     } catch (error) {
       if (
         error instanceof MaxRulesReachedError ||
-        error instanceof SameCurrencyRuleError ||
         error instanceof RuleAlreadySubscribedError
       ) {
         throw new BadRequestException(error.message);
+      } else if (error instanceof RuleNotFoundError) {
+        throw new NotFoundException(error.message);
       }
       throw new InternalServerErrorException('Failed to add rule');
     }
@@ -136,10 +137,8 @@ export class RulesController {
     try {
       await this.rulesService.removeRule(serviceData.data);
       return { message: 'Rule archived successfully' };
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      if (error instanceof RuleNotFoundError) {
-        throw new NotFoundException(error.message);
-      }
       throw new InternalServerErrorException('Failed to archive rule');
     }
   }
@@ -163,9 +162,6 @@ export class RulesController {
       await this.rulesService.restoreRule(serviceData.data);
       return { message: 'Rule restored successfully' };
     } catch (error) {
-      if (error instanceof RuleNotFoundError) {
-        throw new NotFoundException(error.message);
-      }
       if (error instanceof MaxRulesReachedError) {
         throw new ConflictException(error.message);
       }

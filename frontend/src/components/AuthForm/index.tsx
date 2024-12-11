@@ -31,9 +31,9 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
         Cookies.set("token", token, { expires: 1 / 24 });
         onAuthSuccess(token);
       }
-    } catch (error) {
-      toast.error("Authentication failed");
-      console.error("Authentication failed", error);
+    } catch (err) {
+      const error = err as { response: { data: { message: string } } };
+      toast.error(error.response.data.message);
     } finally {
       setLoading(false);
     }

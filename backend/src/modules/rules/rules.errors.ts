@@ -5,9 +5,9 @@ export class RuleNotFoundError extends Error {
 }
 
 export class MaxRulesReachedError extends Error {
-  constructor(userId: string, trendDirection: string) {
+  constructor(trendDirection: string) {
     super(
-      `User ${userId} has reached maximum rules limit (5) for ${trendDirection} direction`,
+      `User has reached maximum rules limit (5) for ${trendDirection} direction`,
     );
   }
 }
@@ -30,11 +30,11 @@ export class SameCurrencyRuleError extends Error {
   }
 }
 
-export class RuleNotEnabledError extends Error {
-  constructor(ruleId: string) {
-    super(`Rule ${ruleId} is not enabled`);
-  }
-}
+// export class RuleNotEnabledError extends Error {
+//   constructor(ruleId: string) {
+//     super(`Rule ${ruleId} is not enabled`);
+//   }
+// }
 
 export class PairNotFoundError extends Error {
   constructor(pairId: string) {

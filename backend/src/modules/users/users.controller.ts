@@ -6,10 +6,11 @@ import {
   InternalServerErrorException,
   ConflictException,
   UnauthorizedException,
+  NotFoundException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { AuthUserSchema, AuthUserDto } from './users.schema';
-import { DuplicateUserError } from './users.errors';
+import { DuplicateUserError, UserNotFoundError } from './users.errors';
 import { AuthService } from '../auth/auth.service';
 
 @Controller('users')
@@ -31,6 +32,8 @@ export class UsersController {
     } catch (error) {
       if (error instanceof DuplicateUserError) {
         throw new ConflictException(error.message);
+      } else if (error instanceof UserNotFoundError) {
+        throw new NotFoundException(error.message);
       }
       throw new InternalServerErrorException('Failed to create user');
     }
@@ -50,7 +53,7 @@ export class UsersController {
       return this.authService.login(user);
     } catch (error) {
       if (error instanceof UnauthorizedException) {
-        throw new BadRequestException('Invalid credentials');
+        throw error;
       }
       throw new InternalServerErrorException('Failed to login');
     }

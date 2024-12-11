@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AuthUserDto, UserDto } from './users.schema';
-import { DuplicateUserError, UserNotFoundError } from './users.errors';
+import { DuplicateUserError } from './users.errors';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -16,10 +16,10 @@ export class UsersService {
 
       return user;
     } catch (error) {
-      if (error instanceof UserNotFoundError) {
-        throw error;
-      }
-      throw new Error('Failed to fetch user');
+      // if (error instanceof UserNotFoundError) {
+      throw error;
+      // }
+      // throw new Error('Failed to fetch user');
     }
   }
 
@@ -41,10 +41,10 @@ export class UsersService {
       });
     } catch (error) {
       console.log(error);
-      if (error instanceof DuplicateUserError) {
-        throw error;
-      }
-      throw new Error('Failed to create user');
+      // if (error instanceof DuplicateUserError) {
+      throw error;
+      // }
+      // throw new Error('Failed to create user');
     }
   }
 
@@ -64,10 +64,10 @@ export class UsersService {
 
       return user;
     } catch (error) {
-      if (error instanceof UnauthorizedException) {
-        throw error;
-      }
-      throw new Error('Failed to validate user');
+      // if (error instanceof UnauthorizedException) {
+      throw error;
+      // }
+      // throw new Error('Failed to validate user');
     }
   }
 }

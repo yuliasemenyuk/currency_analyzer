@@ -1,9 +1,3 @@
-export class CurrencyNotFoundError extends Error {
-  constructor(code: string) {
-    super(`Currency ${code} not found`);
-  }
-}
-
 export class PairNotFoundError extends Error {
   constructor(pairId: string) {
     super(`Pair ${pairId} not found`);

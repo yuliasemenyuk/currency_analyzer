@@ -80,12 +80,12 @@ export class CurrenciesService implements OnModuleInit {
       if (error instanceof InvalidCurrencyDataError) {
         this.logger.error(
           'Invalid currency data received from API',
-          error.stack,
+          error.message,
         );
       } else {
         this.logger.error(
           'Failed to initialize currencies',
-          (error as Error).stack,
+          (error as Error).message,
         );
       }
     }
@@ -103,10 +103,10 @@ export class CurrenciesService implements OnModuleInit {
         }
       });
     } catch (error) {
-      if (error instanceof InvalidCurrencyDataError) {
-        throw error;
-      }
-      throw new Error('Failed to fetch currencies');
+      // if (error instanceof InvalidCurrencyDataError) {
+      throw error;
+      // }
+      // throw new Error('Failed to fetch currencies');
     }
   }
 
@@ -131,9 +131,8 @@ export class CurrenciesService implements OnModuleInit {
         ...rest,
         isEnabled: users[0]?.isEnabled ?? false,
       }));
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      throw new Error('Failed to fetch monitored pairs');
+      throw error;
     }
   }
 
@@ -171,13 +170,13 @@ export class CurrenciesService implements OnModuleInit {
       });
     } catch (error) {
       console.log(error, 'error');
-      if (
-        error instanceof SameCurrencyError ||
-        error instanceof DuplicatePairError
-      ) {
-        throw error;
-      }
-      throw new Error('Failed to start monitoring pair');
+      // if (
+      //   error instanceof SameCurrencyError ||
+      //   error instanceof DuplicatePairError
+      // ) {
+      throw error;
+      //   }
+      //   throw new Error('Failed to start monitoring pair');
     }
   }
 
@@ -204,10 +203,10 @@ export class CurrenciesService implements OnModuleInit {
         },
       });
     } catch (error) {
-      if (error instanceof PairNotFoundError) {
-        throw error;
-      }
-      throw new Error('Failed to disable pair monitoring');
+      // if (error instanceof PairNotFoundError) {
+      throw error;
+      //   }
+      //   throw new Error('Failed to disable pair monitoring');
     }
   }
 
@@ -234,10 +233,10 @@ export class CurrenciesService implements OnModuleInit {
         },
       });
     } catch (error) {
-      if (error instanceof PairNotFoundError) {
-        throw error;
-      }
-      throw new Error('Failed to enable pair monitoring');
+      // if (error instanceof PairNotFoundError) {
+      throw error;
+      // }
+      // throw new Error('Failed to enable pair monitoring');
     }
   }
 
@@ -271,47 +270,12 @@ export class CurrenciesService implements OnModuleInit {
       });
     } catch (error) {
       console.log(error);
-      if (error instanceof PairNotFoundError) {
-        throw error;
-      }
-      throw new Error('Failed to delete monitored pair');
+      // if (error instanceof PairNotFoundError) {
+      throw error;
+      //   }
+      //   throw new Error('Failed to delete monitored pair');
     }
   }
-
-  // async getRates(from: string, to: string): Promise<ExchangeRate> {
-  //   try {
-  //     const { data } = await firstValueFrom(
-  //       this.httpService.get(
-  //         `${apiUrl}/latest.json?app_id=${API_KEY}&base=${from}&symbols=${to}`,
-  //       ),
-  //     );
-
-  //     if (!data.rates || !data.rates[to]) {
-  //       throw new InvalidCurrencyDataError();
-  //     }
-
-  //     const rateData = {
-  //       fromCurrency: from,
-  //       toCurrency: to,
-  //       rate: data.rates[to],
-  //       lastUpdated: new Date(data.timestamp * 1000).toISOString(),
-  //       bid: data.rates[to],
-  //       ask: data.rates[to],
-  //     };
-
-  //     const validated = ExchangeRateSchema.safeParse(rateData);
-  //     if (!validated.success) {
-  //       throw new InvalidCurrencyDataError();
-  //     }
-
-  //     return validated.data;
-  //   } catch (error) {
-  //     if (error instanceof InvalidCurrencyDataError) {
-  //       throw error;
-  //     }
-  //     throw new Error('Failed to fetch exchange rates');
-  //   }
-  // }
 
   async getCurrencyRate(fromCurrencyCode: string, toCurrencyCode: string) {
     try {
@@ -333,7 +297,6 @@ export class CurrenciesService implements OnModuleInit {
         `Rate fetch failed: ${fromCurrencyCode}/${toCurrencyCode}`,
         (error as Error).message,
       );
-      // throw new Error('Failed to fetch currency rate');
     }
   }
 
@@ -350,7 +313,6 @@ export class CurrenciesService implements OnModuleInit {
         //   toCurrency: true,
         // },
       });
-      console.log(pairs, 'PAIRS');
       return pairs;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {

@@ -98,7 +98,7 @@ export class CurrenciesController {
   async disableMonitored(@User() user: { id: string }, @Body() body: unknown) {
     const validated = ToggleMonitorRequestSchema.safeParse(body);
     if (!validated.success) {
-      throw new BadRequestException(validated.error.errors);
+      throw new BadRequestException(validated.error.errors[0].message);
     }
 
     const serviceData = ToggleMonitorServiceSchema.parse({
@@ -120,7 +120,7 @@ export class CurrenciesController {
   async enableMonitored(@User() user: { id: string }, @Body() body: unknown) {
     const validated = ToggleMonitorRequestSchema.safeParse(body);
     if (!validated.success) {
-      throw new BadRequestException(validated.error.errors);
+      throw new BadRequestException(validated.error.errors[0].message);
     }
 
     const serviceData = ToggleMonitorServiceSchema.parse({
@@ -154,28 +154,4 @@ export class CurrenciesController {
       throw new InternalServerErrorException('Failed to delete monitored pair');
     }
   }
-
-  // @Get('rates')
-  // async getRates(@Query() query: unknown) {
-  //   const validated = RateQuerySchema.safeParse(query);
-  //   if (!validated.success) {
-  //     throw new BadRequestException(validated.error.errors);
-  //   }
-
-  //   if (validated.data.from === validated.data.to) {
-  //     throw new BadRequestException('From and to currencies must be different');
-  //   }
-
-  //   try {
-  //     return await this.currenciesService.getRates(
-  //       validated.data.from,
-  //       validated.data.to,
-  //     );
-  //   } catch (error) {
-  //     if (error instanceof InvalidCurrencyDataError) {
-  //       throw new BadRequestException(error.message);
-  //     }
-  //     throw new InternalServerErrorException('Failed to fetch rates');
-  //   }
-  // }
 }

@@ -12,7 +12,7 @@ import {
 import {
   InvalidRuleDataError,
   MaxRulesReachedError,
-  // RuleNotFoundError,
+  RuleNotFoundError,
   RuleSubscriptionError,
   SameCurrencyRuleError,
   PairNotFoundError,
@@ -49,7 +49,7 @@ export class RulesService {
       }));
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      throw new Error('Failed to fetch user rules');
+      throw error;
     }
   }
 
@@ -77,7 +77,7 @@ export class RulesService {
       });
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      throw new Error('Failed to find rule');
+      throw new RuleNotFoundError('Failed to find rule');
     }
   }
 
@@ -123,13 +123,13 @@ export class RulesService {
 
       return rule;
     } catch (error) {
-      if (
-        error instanceof PairNotFoundError ||
-        error instanceof MaxRulesReachedError
-      ) {
-        throw error;
-      }
-      throw new Error('Failed to create rule');
+      // if (
+      //   error instanceof PairNotFoundError ||
+      //   error instanceof MaxRulesReachedError
+      // ) {
+      throw error;
+      // }
+      // throw new Error('Failed to create rule');
     }
   }
 
@@ -155,7 +155,7 @@ export class RulesService {
       });
 
       if (existingRulesCount >= 5) {
-        throw new MaxRulesReachedError(userId, trendDirection);
+        throw new MaxRulesReachedError(trendDirection);
       }
 
       const existingRule = await this.findRuleByCurrencies({
@@ -218,15 +218,17 @@ export class RulesService {
 
       return newRule;
     } catch (error) {
-      if (
-        error instanceof SameCurrencyRuleError ||
-        error instanceof PairNotFoundError ||
-        error instanceof MaxRulesReachedError ||
-        error instanceof RuleAlreadySubscribedError
-      ) {
-        throw error;
-      }
-      throw new Error('Failed to handle rule subscription');
+      throw error;
+      //   if (
+      //     error instanceof SameCurrencyRuleError ||
+      //     error instanceof PairNotFoundError ||
+      //     error instanceof MaxRulesReachedError ||
+      //     error instanceof RuleAlreadySubscribedError ||
+      //     error instanceof RuleNotFoundError
+      //   ) {
+      //     throw error;
+      //   }
+      //   throw new Error('Failed to handle rule subscription');
     }
   }
 
@@ -281,7 +283,7 @@ export class RulesService {
       // if (error instanceof MaxRulesReachedError) {
       //   throw error;
       // }
-      throw new Error('Failed to archive rule');
+      throw error;
     }
   }
 
@@ -302,7 +304,6 @@ export class RulesService {
 
       if (existingRulesCount >= 5) {
         throw new MaxRulesReachedError(
-          userId,
           (
             await this.prisma.rule.findUnique({
               where: { id: ruleId },
@@ -325,10 +326,7 @@ export class RulesService {
       // return rule;
     } catch (error) {
       console.log(error);
-      if (error instanceof MaxRulesReachedError) {
-        throw error;
-      }
-      throw new Error('Failed to restore rule');
+      throw error;
     }
   }
 
@@ -365,11 +363,11 @@ export class RulesService {
         }
       });
     } catch (error) {
-      if (error instanceof InvalidRuleDataError) {
-        throw error;
-      }
-      throw new Error('Failed to fetch active rules');
+      // if (error instanceof InvalidRuleDataError) {
+      throw error;
     }
+    // throw new Error('Failed to fetch active rules');
+    // }
   }
 
   async getArchivedRules(userId: string): Promise<RuleListResponse[]> {
@@ -393,7 +391,7 @@ export class RulesService {
       }));
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      throw new Error('Failed to fetch archived rules');
+      throw error;
     }
   }
 }
